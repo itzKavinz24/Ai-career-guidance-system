@@ -2,6 +2,7 @@
 
 import json
 import os
+import random
 from typing import Dict, List
 
 from dotenv import load_dotenv
@@ -15,35 +16,59 @@ load_dotenv()
 
 _API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 _CLIENT = Anthropic(api_key=_API_KEY) if Anthropic and _API_KEY else None
+_LLM_DEBUG = os.getenv("LLM_DEBUG", "false").lower() == "true"
 
 _VALID_DIFFICULTIES = {"easy", "medium", "hard"}
 
 
 def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
-    """Return deterministic fallback questions when API/JSON parsing fails."""
+    """Return varied fallback questions when API/JSON parsing fails."""
     prompt_scope = f"{skill} in {domain}" if domain else skill
-    return [
-        {
-            "question": f"Which activity best shows practical {prompt_scope} ability at {difficulty} level?",
-            "options": [
-                "Break a complex task into smaller steps and execute them",
-                "Wait for full instructions before starting",
-                "Avoid experimenting with new approaches",
-                "Focus only on speed over quality",
-            ],
-            "answer": "Break a complex task into smaller steps and execute them",
-        },
-        {
-            "question": f"When solving a {prompt_scope} challenge, what is the best first step for {difficulty} learners?",
-            "options": [
-                "Clarify the problem goals and constraints",
-                "Skip planning and start coding immediately",
-                "Copy a solution without understanding it",
-                "Ignore feedback from users or mentors",
-            ],
-            "answer": "Clarify the problem goals and constraints",
-        },
+
+    difficulty_context = {
+        "easy": "basic",
+        "medium": "intermediate",
+        "hard": "advanced",
+    }.get(difficulty, "basic")
+
+    question_stems = [
+        f"Which choice best demonstrates {difficulty_context} {prompt_scope} decision-making?",
+        f"In a {prompt_scope} scenario, what is the strongest {difficulty} approach?",
+        f"What action most improves outcomes in {difficulty_context} {prompt_scope} tasks?",
+        f"When facing a {prompt_scope} challenge, what should you prioritize first?",
+        f"Which behavior reflects strong {difficulty_context} thinking for {prompt_scope}?",
     ]
+
+    correct_options = [
+        "Break the problem into steps, test assumptions, and iterate with feedback",
+        "Clarify requirements, choose a method, then validate with measurable results",
+        "Identify constraints early and adapt the solution based on evidence",
+        "Evaluate trade-offs, then implement and review outcomes systematically",
+    ]
+
+    distractors = [
+        "Pick the first idea and avoid revisiting it even if it fails",
+        "Optimize only for speed while ignoring quality and constraints",
+        "Copy a prior solution without checking whether context has changed",
+        "Delay all decisions until someone else chooses for you",
+        "Ignore user feedback to keep the implementation unchanged",
+        "Avoid planning and start execution immediately with no checks",
+        "Rely on intuition only and skip data or validation",
+        "Focus on one detail and ignore system-level impact",
+    ]
+
+    random.shuffle(question_stems)
+    selected_stems = question_stems[:2]
+    questions: List[Dict[str, object]] = []
+
+    for stem in selected_stems:
+        correct = random.choice(correct_options)
+        wrong = random.sample(distractors, 3)
+        options = wrong + [correct]
+        random.shuffle(options)
+        questions.append({"question": stem, "options": options, "answer": correct, "source": "fallback"})
+
+    return questions
 
 
 def _extract_json_array(raw_text: str) -> str:
@@ -127,5 +152,7 @@ def generate_questions(skill: str, domain: str, difficulty: str) -> List[Dict[st
         json_array_text = _extract_json_array(raw_text)
         parsed = json.loads(json_array_text)
         return _normalize_questions(parsed)
-    except Exception:
+    except Exception as exc:
+        if _LLM_DEBUG:
+            print(f"Claude generation failed: {exc}")
         return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
