@@ -136,6 +136,25 @@ export const getGrowthOpportunities = (careerId) =>
 export const getSalaryTrends = (careerId) =>
   apiCall(`/match/salary-trends/${careerId}`, "GET");
 
+export const simulateWhatIf = (selectedSkill, currentScores, interests = []) =>
+  quizApiCall("/simulate", "POST", {
+    selected_skill: selectedSkill,
+    current_scores: currentScores,
+    interests,
+  });
+
+export const generateCareers = (skills, interests = [], topMatch = []) =>
+  quizApiCall("/generate-careers", "POST", {
+    skills,
+    interests,
+    top_match: topMatch,
+  });
+
+export const getCareerAnalysis = (skills) =>
+  quizApiCall("/career-analysis", "POST", {
+    skills,
+  });
+
 // Health check (direct backend call, outside /api routes)
 export const checkHealth = async () => {
   try {

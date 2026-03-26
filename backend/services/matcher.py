@@ -166,3 +166,87 @@ def filter_careers_by_salary_range(min_salary, max_salary):
             })
     
     return filtered
+
+
+def simulate_skill_improvement(selected_skill, current_scores, interests=None, increase_by=20):
+    """
+    Simulate improving one skill and estimate career match improvement.
+
+    Args:
+        selected_skill: Skill name selected by user
+        current_scores: Dict like {"Python": 60, "SQL": 45}
+        interests: Optional list of interests
+        increase_by: Improvement amount for selected skill (default 20)
+
+    Returns:
+        Dict with old/new match %, improvement %, and new possible roles
+    """
+    if not selected_skill:
+        raise ValueError("selected_skill is required")
+
+    if not isinstance(current_scores, dict) or not current_scores:
+        raise ValueError("current_scores must be a non-empty object")
+
+    normalized_scores = {
+        str(skill).strip().lower(): max(0, min(100, float(score)))
+        for skill, score in current_scores.items()
+    }
+    selected_key = str(selected_skill).strip().lower()
+
+    if selected_key not in normalized_scores:
+        normalized_scores[selected_key] = 0.0
+
+    improved_scores = dict(normalized_scores)
+    improved_scores[selected_key] = min(100.0, improved_scores[selected_key] + increase_by)
+
+    interests = [str(i).strip().lower() for i in (interests or []) if str(i).strip()]
+
+    def _profile_score_for_career(scores_map, career):
+        required = [s.lower() for s in career.get('required_skills', [])]
+        if not required:
+            skill_score = 0.0
+        else:
+            skill_score = sum(scores_map.get(skill, 0.0) for skill in required) / len(required)
+
+        career_interests = [i.lower() for i in career.get('related_interests', [])]
+        interest_score = 0.0
+        if career_interests and interests:
+            overlap = len(set(interests) & set(career_interests))
+            interest_score = (overlap / len(career_interests)) * 100
+
+        return round((skill_score * 0.8) + (interest_score * 0.2), 2)
+
+    old_scores = []
+    new_scores = []
+    for career in CAREERS_DB:
+        old_val = _profile_score_for_career(normalized_scores, career)
+        new_val = _profile_score_for_career(improved_scores, career)
+        old_scores.append({'id': career.get('id'), 'name': career.get('name'), 'score': old_val})
+        new_scores.append({'id': career.get('id'), 'name': career.get('name'), 'score': new_val})
+
+    old_scores.sort(key=lambda x: x['score'], reverse=True)
+    new_scores.sort(key=lambda x: x['score'], reverse=True)
+
+    old_top = old_scores[0]['score'] if old_scores else 0
+    new_top = new_scores[0]['score'] if new_scores else 0
+    improvement = round(new_top - old_top, 2)
+
+    old_role_ids = {item['id'] for item in old_scores if item['score'] >= 60}
+    new_possible_roles = [
+        item['name']
+        for item in new_scores
+        if item['score'] >= 60 and item['id'] not in old_role_ids
+    ]
+
+    return {
+        'selected_skill': selected_skill,
+        'old_match_percentage': round(old_top, 2),
+        'new_match_percentage': round(new_top, 2),
+        'improvement_percentage': improvement,
+        'new_possible_job_roles': new_possible_roles,
+        'top_matches_after_simulation': new_scores[:5],
+        'updated_scores': {
+            skill: round(score, 2)
+            for skill, score in improved_scores.items()
+        },
+    }

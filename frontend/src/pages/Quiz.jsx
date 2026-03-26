@@ -39,14 +39,16 @@ const Quiz = () => {
     initialize();
   }, [skills, domain, navigate]);
 
-  const handleQuizEnd = (finalCorrect, finalAnswered) => {
+  const handleQuizEnd = (finalCorrect, finalAnswered, finalState = null) => {
     const quizScore = finalCorrect * 20;
+    const currentScores = finalState?.skill_scores || state?.skill_scores || {};
     navigate('/results', {
       state: {
         skills,
         domain,
         quizScore,
         totalQuestions: Math.max(finalAnswered, 1),
+        currentScores,
       },
     });
   };
@@ -68,7 +70,7 @@ const Quiz = () => {
       setState(response.state || null);
 
       if (response.quiz_complete || !response.question) {
-        handleQuizEnd(nextCorrectCount, nextAnsweredCount);
+        handleQuizEnd(nextCorrectCount, nextAnsweredCount, response.state || null);
         return;
       }
 

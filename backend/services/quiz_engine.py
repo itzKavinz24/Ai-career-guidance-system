@@ -13,6 +13,16 @@ def initialize_quiz_state(skills: List[str], domain: str) -> Dict[str, object]:
     if not normalized_skills:
         normalized_skills = ["problem solving"]
 
+    skill_stats = {
+        skill: {
+            "asked": 0,
+            "correct": 0,
+            "wrong": 0,
+            "score": 0,
+        }
+        for skill in normalized_skills
+    }
+
     return {
         "skills": normalized_skills,
         "domain": (domain or "general").strip() or "general",
@@ -24,6 +34,7 @@ def initialize_quiz_state(skills: List[str], domain: str) -> Dict[str, object]:
         "repeat_fail_count": 0,
         "question_buffer": [],
         "current_question": None,
+        "skill_stats": skill_stats,
         "quiz_complete": False,
     }
 
@@ -99,9 +110,22 @@ def get_next_question(state: Dict[str, object], user_answer: str) -> Dict[str, o
     expected = str(current_question.get("answer", "")).strip()
     is_correct = selected == expected and selected != ""
 
+    current_skill = str(state.get("current_skill", "")).strip()
+    skill_stats = state.get("skill_stats", {})
+    if not isinstance(skill_stats, dict):
+        skill_stats = {}
+        state["skill_stats"] = skill_stats
+
+    if current_skill and current_skill not in skill_stats:
+        skill_stats[current_skill] = {"asked": 0, "correct": 0, "wrong": 0, "score": 0}
+
+    stat = skill_stats.get(current_skill, {"asked": 0, "correct": 0, "wrong": 0, "score": 0})
+    stat["asked"] = int(stat.get("asked", 0)) + 1
+
     if is_correct:
         state["correct_count"] = int(state.get("correct_count", 0)) + 1
         state["repeat_fail_count"] = 0
+        stat["correct"] = int(stat.get("correct", 0)) + 1
 
         current_idx = _difficulty_index(str(state.get("difficulty_level", "easy")))
         if current_idx < len(DIFFICULTY_LEVELS) - 1:
@@ -111,6 +135,7 @@ def get_next_question(state: Dict[str, object], user_answer: str) -> Dict[str, o
             _move_to_next_skill(state)
     else:
         state["wrong_count"] = int(state.get("wrong_count", 0)) + 1
+        stat["wrong"] = int(stat.get("wrong", 0)) + 1
         repeat_fail_count = int(state.get("repeat_fail_count", 0)) + 1
         state["repeat_fail_count"] = repeat_fail_count
 
@@ -119,6 +144,18 @@ def get_next_question(state: Dict[str, object], user_answer: str) -> Dict[str, o
         else:
             # First failure repeats same difficulty once.
             state["question_buffer"] = []
+
+    asked = max(1, int(stat.get("asked", 1)))
+    correct = int(stat.get("correct", 0))
+    stat["score"] = round((correct / asked) * 100, 2)
+    skill_stats[current_skill] = stat
+
+    # Flatten score view for easy frontend consumption.
+    state["skill_scores"] = {
+        skill: float(values.get("score", 0))
+        for skill, values in skill_stats.items()
+        if isinstance(values, dict)
+    }
 
     next_question = _pull_question_for_state(state)
     return {
