@@ -14,6 +14,8 @@ frontend/.env.production.local
 
 # Backend (Python) ignore patterns
 backend/__pycache__/
+**/__pycache__/
+*.py[cod]
 backend/*.py[cod]
 backend/*$py.class
 backend/*.so
