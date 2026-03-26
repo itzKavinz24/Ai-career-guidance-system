@@ -1,5 +1,6 @@
 import json
 import os
+from services.career_analysis import _calculate_metrics, _get_careers_for_domain, _normalize_input_skills
 
 # Load careers data from JSON file
 def _load_careers():
@@ -168,7 +169,7 @@ def filter_careers_by_salary_range(min_salary, max_salary):
     return filtered
 
 
-def simulate_skill_improvement(selected_skill, current_scores, interests=None, increase_by=20):
+def simulate_skill_improvement(selected_skill, current_scores, interests=None, increase_by=20, domain=None):
     """
     Simulate improving one skill and estimate career match improvement.
 
@@ -187,42 +188,46 @@ def simulate_skill_improvement(selected_skill, current_scores, interests=None, i
     if not isinstance(current_scores, dict) or not current_scores:
         raise ValueError("current_scores must be a non-empty object")
 
-    normalized_scores = {
-        str(skill).strip().lower(): max(0, min(100, float(score)))
+    # Keep original skill names so they align with career requirements.
+    normalized_scores_100 = {
+        str(skill).strip(): max(0.0, min(100.0, float(score)))
         for skill, score in current_scores.items()
+        if str(skill).strip()
     }
-    selected_key = str(selected_skill).strip().lower()
+    selected_key = str(selected_skill).strip()
 
-    if selected_key not in normalized_scores:
-        normalized_scores[selected_key] = 0.0
+    if selected_key not in normalized_scores_100:
+        normalized_scores_100[selected_key] = 0.0
 
-    improved_scores = dict(normalized_scores)
-    improved_scores[selected_key] = min(100.0, improved_scores[selected_key] + increase_by)
+    improved_scores_100 = dict(normalized_scores_100)
+    improved_scores_100[selected_key] = min(100.0, improved_scores_100[selected_key] + increase_by)
 
-    interests = [str(i).strip().lower() for i in (interests or []) if str(i).strip()]
+    # Convert 0-100 UI scores to 0-10 API scoring scale.
+    old_scores_10 = {skill: score / 10.0 for skill, score in normalized_scores_100.items()}
+    new_scores_10 = {skill: score / 10.0 for skill, score in improved_scores_100.items()}
 
-    def _profile_score_for_career(scores_map, career):
-        required = [s.lower() for s in career.get('required_skills', [])]
-        if not required:
-            skill_score = 0.0
-        else:
-            skill_score = sum(scores_map.get(skill, 0.0) for skill in required) / len(required)
+    # Reuse the same expansion logic as career analysis for dynamic related-skill matching.
+    expanded_old = _normalize_input_skills(old_scores_10)
+    expanded_new = _normalize_input_skills(new_scores_10)
 
-        career_interests = [i.lower() for i in career.get('related_interests', [])]
-        interest_score = 0.0
-        if career_interests and interests:
-            overlap = len(set(interests) & set(career_interests))
-            interest_score = (overlap / len(career_interests)) * 100
+    # Prefer explicit domain, else try first interest value.
+    domain_value = str(domain).strip() if domain else ""
+    if not domain_value and interests:
+        first_interest = str(interests[0]).strip()
+        if first_interest:
+            domain_value = first_interest
 
-        return round((skill_score * 0.8) + (interest_score * 0.2), 2)
+    domain_careers = _get_careers_for_domain(domain_value)
 
     old_scores = []
     new_scores = []
-    for career in CAREERS_DB:
-        old_val = _profile_score_for_career(normalized_scores, career)
-        new_val = _profile_score_for_career(improved_scores, career)
-        old_scores.append({'id': career.get('id'), 'name': career.get('name'), 'score': old_val})
-        new_scores.append({'id': career.get('id'), 'name': career.get('name'), 'score': new_val})
+    for role_name, required_skills in domain_careers.items():
+        old_metrics = _calculate_metrics(expanded_old, required_skills)
+        new_metrics = _calculate_metrics(expanded_new, required_skills)
+
+        role_id = role_name.lower().replace(' ', '-').replace('/', '-')
+        old_scores.append({'id': role_id, 'name': role_name, 'score': old_metrics['match']})
+        new_scores.append({'id': role_id, 'name': role_name, 'score': new_metrics['match']})
 
     old_scores.sort(key=lambda x: x['score'], reverse=True)
     new_scores.sort(key=lambda x: x['score'], reverse=True)
@@ -235,11 +240,12 @@ def simulate_skill_improvement(selected_skill, current_scores, interests=None, i
     new_possible_roles = [
         item['name']
         for item in new_scores
-        if item['score'] >= 60 and item['id'] not in old_role_ids
+        if item['score'] >= 50 and item['id'] not in old_role_ids
     ]
 
     return {
         'selected_skill': selected_skill,
+        'domain': domain_value or 'Web & Mobile Development',
         'old_match_percentage': round(old_top, 2),
         'new_match_percentage': round(new_top, 2),
         'improvement_percentage': improvement,
@@ -247,6 +253,6 @@ def simulate_skill_improvement(selected_skill, current_scores, interests=None, i
         'top_matches_after_simulation': new_scores[:5],
         'updated_scores': {
             skill: round(score, 2)
-            for skill, score in improved_scores.items()
+            for skill, score in improved_scores_100.items()
         },
     }

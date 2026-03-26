@@ -54,16 +54,20 @@ const TRENDING_CAREERS = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const domainLoop = [...DOMAIN_CARDS, ...DOMAIN_CARDS];
+  const trendingLoop = [...TRENDING_CAREERS, ...TRENDING_CAREERS];
 
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="card-surface py-12 px-6 sm:px-10">
+      <section className="card-surface glow-ring overflow-hidden py-14 px-6 sm:px-10 relative">
+        <div className="pointer-events-none absolute -top-16 -right-10 h-44 w-44 rounded-full bg-blue-300/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-12 h-52 w-52 rounded-full bg-teal-300/25 blur-3xl" />
         <div className="space-y-4">
-          <div className="inline-block rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-600 border border-blue-200">
+          <div className="inline-block rounded-full border border-blue-200/70 bg-white/75 px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur">
             🎯 AI Career Guidance
           </div>
-          <h1 className="headline-display text-4xl sm:text-5xl font-bold text-gray-900 text-center sm:text-left">
+          <h1 className="headline-display text-4xl sm:text-5xl font-bold text-gray-900 text-center sm:text-left leading-tight">
             Find Your Perfect Career Path
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto sm:mx-0 text-center sm:text-left">
@@ -99,14 +103,17 @@ const Home = () => {
           <p className="section-subtitle">Choose an area that interests you to get started.</p>
         </div>
 
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {DOMAIN_CARDS.map((domain) => (
-            <Card
-              key={domain.id}
-              title={domain.title}
-              description={domain.description}
-            />
-          ))}
+        <div className="auto-rail" style={{ '--slide-duration': '28s' }}>
+          <div className="auto-rail-track">
+            {domainLoop.map((domain, idx) => (
+              <div key={`${domain.id}-${idx}`} className="auto-rail-item">
+                <Card
+                  title={domain.title}
+                  description={domain.description}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -117,17 +124,18 @@ const Home = () => {
           <p className="section-subtitle">Roles with strong long‑term growth and demand.</p>
         </div>
 
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {TRENDING_CAREERS.map((career) => (
-            <div
-              key={career.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-transform duration-300 border border-gray-200 p-5 cursor-pointer"
-            >
-              <h3 className="text-lg font-semibold text-blue-600">{career.title}</h3>
-              <p className="mt-2 text-sm font-medium text-gray-700">{career.growth}</p>
-              <p className="mt-1 text-sm text-gray-600">{career.outlook}</p>
-            </div>
-          ))}
+        <div className="auto-rail reverse" style={{ '--slide-duration': '34s' }}>
+          <div className="auto-rail-track">
+            {trendingLoop.map((career, idx) => (
+              <div key={`${career.id}-${idx}`} className="auto-rail-item">
+                <div className="card-surface lift-on-hover slide-card p-5 cursor-pointer stagger-in h-full">
+                  <h3 className="text-lg font-semibold text-blue-600">{career.title}</h3>
+                  <p className="mt-2 text-sm font-medium text-gray-700">{career.growth}</p>
+                  <p className="mt-1 text-sm text-gray-600">{career.outlook}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>

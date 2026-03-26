@@ -31,11 +31,13 @@ def simulate_what_if():
         selected_skill = data.get('selected_skill')
         current_scores = data.get('current_scores', {})
         interests = data.get('interests', [])
+        domain = data.get('domain')
 
         simulation = matcher.simulate_skill_improvement(
             selected_skill=selected_skill,
             current_scores=current_scores,
             interests=interests,
+            domain=domain,
         )
 
         return {
@@ -79,7 +81,8 @@ def career_analysis():
     try:
         data = request.get_json() or {}
         skills = data.get('skills', {})
-        result = analyze_careers(skills=skills)
+        domain = data.get('domain', 'general')
+        result = analyze_careers(skills=skills, domain=domain)
 
         return {
             'careers': result.get('careers', []),

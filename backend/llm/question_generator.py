@@ -3,10 +3,9 @@
 import json
 import os
 import random
-from urllib import error as urlerror
-from urllib import request as urlrequest
 from typing import Dict, List
 
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,45 +37,94 @@ def _groq_config() -> Dict[str, str]:
 
 
 def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
-    prompt_scope = f"{skill} in {domain}" if domain else skill
-    difficulty_context = {
-        "easy": "basic",
-        "medium": "intermediate",
-        "hard": "advanced",
-    }.get(difficulty, "basic")
-
-    question_stems = [
-        f"Which choice best demonstrates {difficulty_context} {prompt_scope} decision-making?",
-        f"In a {prompt_scope} scenario, what is the strongest {difficulty} approach?",
-        f"What action most improves outcomes in {difficulty_context} {prompt_scope} tasks?",
-        f"When facing a {prompt_scope} challenge, what should you prioritize first?",
-        f"Which behavior reflects strong {difficulty_context} thinking for {prompt_scope}?",
+    """Generate truly diverse fallback questions using skill/domain-specific templates."""
+    safe_skill = skill.strip().lower()
+    safe_domain = domain.strip().lower()
+    safe_difficulty = difficulty.strip().lower()
+    
+    # Skill-specific question templates to avoid repetition
+    skill_templates = {
+        "python": [
+            f"What best demonstrates {safe_difficulty} {skill} mastery in {domain}?",
+            f"In {domain}, how should you approach a complex {skill} problem?",
+            f"Which practice most improves {skill} skills for {domain} roles?",
+            f"When debugging {skill} code in {domain}, what's the first step?",
+            f"How do you choose the right {skill} approach for {domain} tasks?",
+            f"What indicates strong {skill} fundamentals for {domain} work?",
+        ],
+        "sql": [
+            f"How should you design queries for {domain} in {skill}?",
+            f"What's the best {skill} strategy for {domain} data scenarios?",
+            f"Which {skill} practice improves {domain} performance?",
+            f"When optimizing {skill} for {domain}, what matters most?",
+            f"What demonstrates {skill} competency in {domain} contexts?",
+            f"How do you validate {skill} solutions for {domain} work?",
+        ],
+        "machine learning": [
+            f"How should you approach {skill} for {domain}?",
+            f"What's critical in {skill} projects within {domain}?",
+            f"Which step is most important in {skill} workflows for {domain}?",
+            f"How do you evaluate {skill} models in {domain}?",
+            f"What indicates strong {skill} understanding for {domain}?",
+            f"When starting a {skill} project in {domain}, what comes first?",
+        ],
+    }
+    
+    # Get skill-specific templates or use generic ones
+    skill_key = next((k for k in skill_templates if k in safe_skill), None)
+    question_seeds = skill_templates.get(skill_key, [
+        f"Which approach best demonstrates {safe_difficulty} thinking for {skill} in {domain}?",
+        f"When facing a {skill} challenge in {domain}, what should you prioritize?",
+        f"How should you handle {skill} tasks in {domain} contexts?",
+        f"What indicates strong {skill} fundamentals for {domain}?",
+        f"In {domain}, how do you apply {skill} effectively?",
+    ])
+    
+    # Diverse correct answers (not just one pool)
+    difficulty_strategies = {
+        "easy": [
+            "Start with basics, practice fundamentals, build confidence",
+            "Learn from examples, follow established patterns, repeat practice",
+            "Study core concepts, apply step-by-step, validate understanding",
+            "Focus on foundations, use best practices, get feedback",
+        ],
+        "medium": [
+            "Break into parts, test assumptions, iterate from feedback",
+            "Clarify scope, choose method, validate measurable results",
+            "Consider constraints early, adapt solution, track outcomes",
+            "Evaluate trade-offs, implement, review and refactor",
+        ],
+        "hard": [
+            "Design for scale, anticipate edge cases, build robustness",
+            "Balance performance with maintainability across constraints",
+            "Optimize systematically, profile, measure, refactor based on metrics",
+            "Plan architecture, handle failures, ensure long-term quality",
+        ],
+    }
+    
+    correct_options = difficulty_strategies.get(safe_difficulty, difficulty_strategies["easy"])
+    bad_answers = [
+        "Pick first idea without checking context",
+        "Optimize speed while ignoring quality",
+        "Copy solutions without understanding",
+        "Skip planning and code immediately",
+        "Ignore feedback and user needs",
+        "Rely only on intuition",
+        "Focus on one detail, ignore system impact",
+        "Avoid testing and validation",
     ]
-    correct_options = [
-        "Break the problem into steps, test assumptions, and iterate with feedback",
-        "Clarify requirements, choose a method, then validate with measurable results",
-        "Identify constraints early and adapt the solution based on evidence",
-        "Evaluate trade-offs, then implement and review outcomes systematically",
-    ]
-    distractors = [
-        "Pick the first idea and avoid revisiting it even if it fails",
-        "Optimize only for speed while ignoring quality and constraints",
-        "Copy a prior solution without checking whether context has changed",
-        "Delay all decisions until someone else chooses for you",
-        "Ignore user feedback to keep the implementation unchanged",
-        "Avoid planning and start execution immediately with no checks",
-        "Rely on intuition only and skip data or validation",
-        "Focus on one detail and ignore system-level impact",
-    ]
-
-    random.shuffle(question_stems)
+    
+    random.shuffle(question_seeds)
     questions: List[Dict[str, object]] = []
-    for stem in question_stems[:2]:
-        correct = random.choice(correct_options)
-        wrong = random.sample(distractors, 3)
+    
+    for i, stem in enumerate(question_seeds[:2]):
+        correct = correct_options[i % len(correct_options)]
+        unique_seed = hash(stem) % len(bad_answers)
+        wrong = random.sample(bad_answers, 3)
         options = wrong + [correct]
         random.shuffle(options)
         questions.append({"question": stem, "options": options, "answer": correct})
+    
     return _attach_meta(questions, "fallback")
 
 
@@ -149,63 +197,80 @@ def generate_questions(skill: str, domain: str, difficulty: str) -> List[Dict[st
 
     groq = _groq_config()
     if not groq["api_key"]:
+        print(f"[question_generator] No Groq API key; using fallback for {safe_skill}/{safe_domain}/{safe_difficulty}")
         return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
 
     prompt = (
-        "Generate aptitude quiz questions. "
-        "Return STRICT JSON only with no markdown and no explanation. "
-        "Output must be a JSON array with exactly 2 objects. "
-        "Each object requires keys: question, options, answer. "
-        "options must have exactly 4 strings and answer must match one option exactly. "
-        f"Skill: {safe_skill}. Domain: {safe_domain}. Difficulty: {safe_difficulty}."
+        "Generate 2 unique multiple-choice aptitude questions. "
+        "Return ONLY valid JSON with no markdown, no code blocks, no explanation. "
+        "Use this exact format:\n"
+        "[\n"
+        '  {"question": "...", "options": ["A", "B", "C", "D"], "answer": "..."},\n'
+        '  {"question": "...", "options": ["A", "B", "C", "D"], "answer": "..."}\n'
+        "]\n\n"
+        f"Skill: {safe_skill}\n"
+        f"Domain: {safe_domain}\n"
+        f"Difficulty: {safe_difficulty}\n"
+        "Each question must:\n"
+        "- Test judgment and problem-solving\n"
+        "- Have 4 distinct options\n"
+        "- Have only 1 correct answer\n"
+        "- Be completely different from common quiz patterns\n"
+        "Make questions challenging and context-specific."
     )
 
-    try:
-        body = json.dumps(
-            {
-                "model": groq["model"],
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You output strict JSON only.",
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-                "temperature": 0.4,
-                "max_tokens": 700,
-            }
-        ).encode("utf-8")
+    for attempt in range(2):  # Retry once on failure
+        try:
+            body = json.dumps(
+                {
+                    "model": groq["model"],
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are a quiz generator. Return ONLY valid JSON. No explanation.",
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        },
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 800,
+                }
+            )
 
-        req = urlrequest.Request(
-            groq["api_url"],
-            data=body,
-            method="POST",
-            headers={
-                "Authorization": f"Bearer {groq['api_key']}",
-                "Content-Type": "application/json",
-            },
-        )
+            response = requests.post(
+                groq["api_url"],
+                headers={
+                    "Authorization": f"Bearer {groq['api_key']}",
+                    "Content-Type": "application/json",
+                },
+                json=json.loads(body),
+                timeout=25,
+            )
 
-        with urlrequest.urlopen(req, timeout=20) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+            if response.status_code != 200:
+                raise requests.HTTPError(f"HTTP {response.status_code}: {response.text[:200]}", response=response)
 
-        raw_text = _extract_generated_text(payload).strip()
+            payload = response.json()
+            raw_text = _extract_generated_text(payload).strip()
+            json_text = _extract_json_array(raw_text)
+            parsed = json.loads(json_text)
+            result = _attach_meta(_normalize(parsed), "groq")
+            print(f"[question_generator] Groq success: {safe_skill}/{safe_domain}/{safe_difficulty}")
+            return result
+        except (requests.HTTPError, ValueError, json.JSONDecodeError, requests.Timeout) as e:
+            error_msg = f"{type(e).__name__}"
+            if isinstance(e, requests.HTTPError):
+                error_msg += f": {str(e)[:100]}"
+            else:
+                error_msg += f": {str(e)[:100]}"
+            
+            if attempt == 0:
+                print(f"[question_generator] Groq attempt 1 failed ({error_msg}), retrying...")
+            else:
+                print(f"[question_generator] Groq attempt 2 failed ({error_msg}), using fallback")
+    
+    print(f"[question_generator] All attempts failed; using fallback for {safe_skill}/{safe_domain}/{safe_difficulty}")
+    return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
 
-        json_text = _extract_json_array(raw_text)
-        parsed = json.loads(json_text)
-        return _attach_meta(_normalize(parsed), "groq")
-    except urlerror.HTTPError as exc:
-        return _attach_meta(
-            _fallback_questions(safe_skill, safe_domain, safe_difficulty),
-            "fallback",
-            f"groq_http_error:{exc.code}",
-        )
-    except Exception as exc:
-        return _attach_meta(
-            _fallback_questions(safe_skill, safe_domain, safe_difficulty),
-            "fallback",
-            f"groq_exception:{exc}",
-        )

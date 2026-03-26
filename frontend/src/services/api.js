@@ -136,12 +136,26 @@ export const getGrowthOpportunities = (careerId) =>
 export const getSalaryTrends = (careerId) =>
   apiCall(`/match/salary-trends/${careerId}`, "GET");
 
-export const simulateWhatIf = (selectedSkill, currentScores, interests = []) =>
-  quizApiCall("/simulate", "POST", {
+export const simulateWhatIf = (
+  selectedSkill,
+  currentScores,
+  domainOrInterests = [],
+) => {
+  const payload = {
     selected_skill: selectedSkill,
     current_scores: currentScores,
-    interests,
-  });
+  };
+
+  if (Array.isArray(domainOrInterests)) {
+    payload.interests = domainOrInterests;
+    payload.domain = domainOrInterests[0] || "";
+  } else {
+    payload.domain = domainOrInterests || "";
+    payload.interests = payload.domain ? [payload.domain] : [];
+  }
+
+  return quizApiCall("/simulate", "POST", payload);
+};
 
 export const generateCareers = (skills, interests = [], topMatch = []) =>
   quizApiCall("/generate-careers", "POST", {
@@ -150,10 +164,17 @@ export const generateCareers = (skills, interests = [], topMatch = []) =>
     top_match: topMatch,
   });
 
-export const getCareerAnalysis = (skills) =>
-  quizApiCall("/career-analysis", "POST", {
-    skills,
+export const getCareerAnalysis = (skillsData) => {
+  // skillsData can be either { skills, domain } or just normalized skills
+  if (skillsData.domain !== undefined) {
+    return quizApiCall("/career-analysis", "POST", skillsData);
+  }
+  // Legacy: just skills object
+  return quizApiCall("/career-analysis", "POST", {
+    skills: skillsData,
+    domain: "general",
   });
+};
 
 // Health check (direct backend call, outside /api routes)
 export const checkHealth = async () => {

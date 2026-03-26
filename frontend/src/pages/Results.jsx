@@ -2,74 +2,85 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getCareerAnalysis, simulateWhatIf } from '../services/api';
 
-const fallbackCareers = [
-  {
-    id: 'ai-engineer',
-    name: 'AI Engineer',
-    description: 'Design and deploy intelligent systems',
-    icon: '🤖',
-    match: 92,
-    futureScope: 'Very high demand across AI product teams and automation roles.',
-    requiredSkills: ['Python', 'Machine Learning', 'Data Structures'],
-    matchedSkills: ['Python'],
-    missingSkills: ['Machine Learning', 'Data Structures'],
-  },
+const LOCAL_ROLE_REQUIREMENTS = [
   {
     id: 'data-scientist',
     name: 'Data Scientist',
-    description: 'Extract insights from data',
     icon: '📊',
-    match: 88,
-    futureScope: 'High growth with strong demand in analytics and AI-driven industries.',
-    requiredSkills: ['Python', 'SQL', 'Statistics'],
-    matchedSkills: ['Python', 'SQL'],
-    missingSkills: ['Statistics'],
+    futureScope: 'High demand and long-term growth in data-driven teams.',
+    requiredSkills: ['Python', 'Machine Learning', 'SQL', 'Statistics'],
   },
   {
-    id: 'fullstack-dev',
-    name: 'Full‑Stack Developer',
-    description: 'Build complete web applications',
-    icon: '💻',
-    match: 85,
-    futureScope: 'Stable hiring demand with strong remote and startup opportunities.',
-    requiredSkills: ['JavaScript', 'React', 'Node.js'],
-    matchedSkills: ['JavaScript'],
-    missingSkills: ['React', 'Node.js'],
+    id: 'ml-engineer',
+    name: 'ML Engineer',
+    icon: '🧠',
+    futureScope: 'Strong hiring momentum for production AI and automation systems.',
+    requiredSkills: ['Python', 'TensorFlow', 'APIs', 'Deployment'],
   },
   {
-    id: 'security-analyst',
-    name: 'Security Analyst',
-    description: 'Protect systems and networks',
-    icon: '🔐',
-    match: 78,
-    futureScope: 'Cybersecurity demand continues to grow due to expanding threats.',
-    requiredSkills: ['Networking', 'Security Fundamentals', 'Linux'],
-    matchedSkills: ['Problem Solving'],
-    missingSkills: ['Networking', 'Linux'],
+    id: 'backend-developer',
+    name: 'Backend Developer',
+    icon: '⚙️',
+    futureScope: 'Steady demand across SaaS, product, and platform engineering teams.',
+    requiredSkills: ['Node.js', 'Databases', 'APIs'],
   },
   {
-    id: 'product-manager',
-    name: 'Product Manager',
-    description: 'Lead product strategy and vision',
-    icon: '📱',
-    match: 82,
-    futureScope: 'Consistent demand in digital products and platform businesses.',
-    requiredSkills: ['Communication', 'Data Literacy', 'Roadmapping'],
-    matchedSkills: ['Problem Solving'],
-    missingSkills: ['Communication', 'Roadmapping'],
-  },
-  {
-    id: 'ux-designer',
-    name: 'UX Designer',
-    description: 'Create beautiful user experiences',
-    icon: '🎨',
-    match: 79,
-    futureScope: 'Growing scope in product-led companies and design-heavy teams.',
-    requiredSkills: ['User Research', 'Design Systems', 'Prototyping'],
-    matchedSkills: [],
-    missingSkills: ['User Research', 'Design Systems', 'Prototyping'],
+    id: 'data-analyst',
+    name: 'Data Analyst',
+    icon: '📈',
+    futureScope: 'Growing demand for business analytics and decision support roles.',
+    requiredSkills: ['SQL', 'Excel', 'Visualization'],
   },
 ];
+
+const buildLocalDynamicCareers = (normalizedScores) => {
+  const scores = normalizedScores || {};
+
+  return LOCAL_ROLE_REQUIREMENTS.map((role, index) => {
+    const required = role.requiredSkills || [];
+    const requiredCount = required.length || 1;
+
+    const scored = required.map((skill) => {
+      const numeric = Number(scores[skill]);
+      const value = Number.isFinite(numeric) ? Math.max(0, Math.min(10, numeric)) : 0;
+      return { skill, value };
+    });
+
+    const total = scored.reduce((sum, item) => sum + item.value, 0);
+    const match = Math.round((total / (10 * requiredCount)) * 100);
+    const domainGap = Math.max(0, 100 - match);
+
+    const missingWithScores = scored
+      .filter((item) => item.value < 6)
+      .sort((a, b) => a.value - b.value);
+
+    const matchedSkills = scored.filter((item) => item.value >= 6).map((item) => item.skill);
+    const missingSkills = missingWithScores.map((item) => item.skill);
+    const techGap = Math.round((missingSkills.length / requiredCount) * 100);
+
+    const leadSkill = missingSkills[0];
+    const suggestion = leadSkill
+      ? `Prioritize ${leadSkill} first to improve your ${role.name} fit.`
+      : `You are aligned for ${role.name}; focus on advanced projects and interview prep.`;
+
+    return {
+      id: `local-${role.id}`,
+      name: role.name,
+      description: `Computed from your current skill profile for ${role.name}.`,
+      icon: role.icon,
+      match,
+      domainGap,
+      techGap,
+      futureScope: role.futureScope,
+      requiredSkills: required,
+      matchedSkills,
+      missingSkills,
+      suggestion,
+      detailsAvailable: false,
+      _order: index,
+    };
+  }).sort((a, b) => b.match - a.match || a._order - b._order);
+};
 
 const Results = () => {
   const location = useLocation();
@@ -89,6 +100,8 @@ const Results = () => {
   const [careersSource, setCareersSource] = useState('fallback');
 
   const quizPercentage = Math.round((quizScore / (totalQuestions * 20)) * 100) || 0;
+  // FIX: Display as percentage, not decimal
+  const displayQuizPercentage = quizPercentage > 10 ? quizPercentage : Math.round((quizScore / totalQuestions) * 100);
 
   const skillOptions = useMemo(() => {
     if (skills.length > 0) {
@@ -109,6 +122,18 @@ const Results = () => {
     }, {});
   }, [location.state?.currentScores, skillOptions, quizPercentage]);
 
+  const normalizedCurrentScores = useMemo(() => {
+    const result = Object.entries(currentScores).reduce((acc, [skill, score]) => {
+      const numeric = Number(score);
+      const zeroToHundred = Number.isNaN(numeric) ? 0 : Math.max(0, Math.min(100, numeric));
+      acc[skill] = Math.round(zeroToHundred) / 10;
+      return acc;
+    }, {});
+    console.log('[Results] 📈 Raw currentScores from Quiz:', currentScores);
+    console.log('[Results] 🔄 Normalized to 0-10 scale:', result);
+    return result;
+  }, [currentScores]);
+
   const handleSimulate = async () => {
     const skill = selectedSkill || skillOptions[0];
     if (!skill) {
@@ -118,7 +143,7 @@ const Results = () => {
     setSimulating(true);
     setSimulationError('');
     try {
-      const response = await simulateWhatIf(skill, currentScores, [domain]);
+      const response = await simulateWhatIf(skill, currentScores, domain);
       setSimulationResult(response.simulation || null);
     } catch (error) {
       setSimulationError('Simulation failed. Please try again.');
@@ -137,14 +162,19 @@ const Results = () => {
       setCareersLoading(true);
       setCareersError('');
       try {
-        const normalizedSkills = Object.entries(currentScores).reduce((acc, [skill, score]) => {
-          const numeric = Number(score);
-          const zeroToHundred = Number.isNaN(numeric) ? 0 : Math.max(0, Math.min(100, numeric));
-          acc[skill] = Math.round((zeroToHundred / 10) * 10) / 10;
-          return acc;
-        }, {});
-
-        const response = await getCareerAnalysis(normalizedSkills);
+        console.log('[Results] 🔍 CALLING CAREER API with normalized scores:', normalizedCurrentScores);
+        const response = await getCareerAnalysis({
+          skills: normalizedCurrentScores,
+          domain: domain || 'general'
+        });
+        console.log('[Results] 📡 API RESPONSE:', response);
+        
+        if (response.careers && response.careers.length > 0) {
+          console.log('[Results] 🎯 Top 3 careers missing skills:');
+          response.careers.slice(0, 3).forEach((c, i) => {
+            console.log(`  ${i + 1}. ${c.title}: missing=[${c.missing_skills?.join(', ')}]`);
+          });
+        }
 
         const mapped = Array.isArray(response.careers)
           ? response.careers.map((career, index) => {
@@ -153,7 +183,15 @@ const Results = () => {
               const requiredSkills = [...matchedSkills, ...missingSkills];
               const derivedMatch = Number.isFinite(Number(career.match))
                 ? Math.max(0, Math.min(100, Math.round(Number(career.match))))
-                : Math.max(55, quizPercentage - 5 + index * 2);
+                : 0;
+
+              const domainGap = Number.isFinite(Number(career.domain_gap))
+                ? Math.max(0, Math.min(100, Math.round(Number(career.domain_gap))))
+                : Math.max(0, 100 - derivedMatch);
+
+              const techGap = Number.isFinite(Number(career.tech_gap))
+                ? Math.max(0, Math.min(100, Math.round(Number(career.tech_gap))))
+                : (requiredSkills.length ? Math.round((missingSkills.length / requiredSkills.length) * 100) : Math.max(0, 100 - derivedMatch));
 
               const explanation =
                 career.llm_output?.explanation
@@ -166,7 +204,9 @@ const Results = () => {
                 name: career.title || `Career ${index + 1}`,
                 description: explanation,
                 icon: '✨',
-                match: Math.max(0, Math.min(100, derivedMatch)),
+                match: derivedMatch,
+                domainGap,
+                techGap,
                 futureScope: career.llm_output?.future_scope || career.future_scope || 'Steady market demand expected in this domain.',
                 requiredSkills,
                 matchedSkills,
@@ -184,61 +224,119 @@ const Results = () => {
           setGeneratedCareers(mapped);
           setCareersSource(response.source || 'groq');
         } else {
-          setGeneratedCareers([]);
-          setCareersSource('fallback');
+          const localDynamic = buildLocalDynamicCareers(normalizedCurrentScores);
+          setGeneratedCareers(localDynamic);
+          setCareersSource('local-dynamic');
         }
       } catch (error) {
-        setGeneratedCareers([]);
-        setCareersSource('fallback');
-        setCareersError('Could not load LLM-based matches. Showing baseline matches.');
+        const localDynamic = buildLocalDynamicCareers(normalizedCurrentScores);
+        setGeneratedCareers(localDynamic);
+        setCareersSource('local-dynamic');
+        setCareersError('Groq is unavailable right now. Showing dynamic backend-style calculations from your quiz scores.');
       } finally {
         setCareersLoading(false);
       }
     };
 
     loadCareerResults();
-  }, [currentScores, quizPercentage, skillOptions]);
+  }, [normalizedCurrentScores, skillOptions, domain]);
 
   // Sort careers by match score
   const topCareers = useMemo(() => {
-    const source = generatedCareers.length > 0 ? generatedCareers : fallbackCareers;
-    return [...source].sort((a, b) => b.match - a.match);
+    return [...generatedCareers].sort((a, b) => b.match - a.match);
   }, [generatedCareers]);
 
-  // Final visible percentage should depend on result matches after generation.
+  // Final visible percentage should prefer career-match average,
+  // but fall back to quiz percentage when matches are all zero.
   const resultPercentage = useMemo(() => {
     if (!topCareers.length) {
-      return quizPercentage;
+      return displayQuizPercentage;
     }
     const considered = topCareers.slice(0, 3);
     const average = considered.reduce((sum, career) => sum + (career.match || 0), 0) / considered.length;
-    return Math.round(average);
-  }, [topCareers, quizPercentage]);
+    const roundedAverage = Math.round(average);
 
-  const benchmarkScore = 80;
-  const techGapAgainstTop = Math.max(0, benchmarkScore - resultPercentage);
+    if (!Number.isFinite(roundedAverage) || roundedAverage <= 0) {
+      return displayQuizPercentage;
+    }
+
+    return roundedAverage;
+  }, [topCareers, displayQuizPercentage]);
+
+  const hasUsableCareerScores = useMemo(() => {
+    if (!topCareers.length) {
+      return false;
+    }
+    const considered = topCareers.slice(0, 3);
+    const average = considered.reduce((sum, career) => sum + (career.match || 0), 0) / considered.length;
+    const roundedAverage = Math.round(average);
+    return Number.isFinite(roundedAverage) && roundedAverage > 0;
+  }, [topCareers]);
 
   const averageDomainGap = useMemo(() => {
-    if (!topCareers.length) {
-      return 0;
+    if (!topCareers.length || !hasUsableCareerScores) {
+      return Math.max(0, 100 - resultPercentage);
     }
-    const totalGap = topCareers
-      .slice(0, 3)
-      .reduce((sum, career) => sum + Math.max(0, benchmarkScore - (career.match || 0)), 0);
-    return Math.round(totalGap / Math.min(3, topCareers.length));
-  }, [topCareers]);
+
+    const considered = topCareers.slice(0, 3);
+    const totalGap = considered.reduce((sum, career) => {
+      if (Number.isFinite(Number(career.domainGap))) {
+        return sum + Number(career.domainGap);
+      }
+      return sum + Math.max(0, 100 - (career.match || 0));
+    }, 0);
+
+    return Math.round(totalGap / considered.length);
+  }, [topCareers, resultPercentage, hasUsableCareerScores]);
+
+  const techGapAgainstTop = useMemo(() => {
+    // Tech gap should represent role-skill deficiency against top candidates.
+    // Even if match scores are weak/zero, this can still be informative.
+    if (!topCareers.length) {
+      return Math.max(0, 100 - resultPercentage);
+    }
+
+    const considered = topCareers.slice(0, 3);
+    const totalGap = considered.reduce((sum, career) => {
+      if (Number.isFinite(Number(career.techGap))) {
+        return sum + Number(career.techGap);
+      }
+
+      const requiredCount = career.requiredSkills?.length || 0;
+      if (requiredCount > 0) {
+        return sum + Math.round(((career.missingSkills?.length || 0) / requiredCount) * 100);
+      }
+
+      return sum + Math.max(0, 100 - (career.match || 0));
+    }, 0);
+
+    return Math.round(totalGap / considered.length);
+  }, [topCareers, resultPercentage]);
 
   const commonMissingSkills = useMemo(() => {
-    const frequency = {};
-    topCareers.slice(0, 3).forEach((career) => {
+    const priority = {};
+    topCareers.slice(0, 3).forEach((career, index) => {
+      const careerWeight = 3 - index;
       (career.missingSkills || []).forEach((skill) => {
-        frequency[skill] = (frequency[skill] || 0) + 1;
+        const userScore = Number(normalizedCurrentScores[skill] ?? 0);
+        const deficit = Math.max(0, 6 - userScore);
+        const selectedSkillBonus = skillOptions.includes(skill) ? 2 : 0;
+        const score = (careerWeight * Math.max(1, deficit)) + selectedSkillBonus;
+        priority[skill] = (priority[skill] || 0) + score;
       });
     });
-    return Object.keys(frequency)
-      .sort((a, b) => frequency[b] - frequency[a])
+    const result = Object.keys(priority)
+      .sort((a, b) => (priority[b] - priority[a]) || a.localeCompare(b))
       .slice(0, 4);
-  }, [topCareers]);
+    
+    console.log('[Results] 📊 Priority Skill Gaps calculation:');
+    console.log('   Top careers:', topCareers.slice(0, 3).map(c => ({ name: c.name, missing: c.missingSkills })));
+    console.log('   User normalized scores:', normalizedCurrentScores);
+    console.log('   Priority weights:', priority);
+    console.log('   Final gaps:', result);
+    
+    return result;
+  }, [topCareers, normalizedCurrentScores, skillOptions]);
 
   const personalizedDirection = useMemo(() => {
     const region = domain || 'General';
@@ -263,6 +361,29 @@ const Results = () => {
 
   return (
     <div className="space-y-12">
+      {/* DEBUG: API-to-UI Trace */}
+      <section className="card-surface p-4 bg-red-50 border-2 border-red-400 rounded-lg">
+        <p className="text-xs font-bold text-red-900 mb-2">🔴 DEBUG - DIAGNOSTIC INFO:</p>
+        <p className="text-xs text-red-800 font-mono mb-1">
+          Quiz Scores: {Object.entries(currentScores).map(([k, v]) => `${k}=${Math.round(v)}%`).join(' | ') || 'NONE'}
+        </p>
+        <p className="text-xs text-red-800 font-mono mb-1">
+          Normalized (0-10): {Object.entries(normalizedCurrentScores).map(([k, v]) => `${k}=${v}`).join(' | ') || 'NONE'}
+        </p>
+        <p className="text-xs text-red-800 font-mono mb-1">
+          Top Careers: {topCareers.length > 0 ? topCareers.slice(0, 3).map(c => `${c.name}(${c.match}%)`).join(' → ') : 'NO CAREERS'}
+        </p>
+        <p className="text-xs text-red-800 font-mono mb-1">
+          Missing Skills Count: {topCareers.slice(0, 3).reduce((sum, c) => sum + (c.missingSkills?.length || 0), 0)}
+        </p>
+        <p className="text-xs text-red-800 font-mono mb-1">
+          Priority Gaps Found: {commonMissingSkills.length > 0 ? commonMissingSkills.join(' → ') : '❌ EMPTY'}
+        </p>
+        <p className="text-xs text-red-800 font-mono">
+          Source: {careersSource} | Loading: {careersLoading ? '⏳' : '✓'}
+        </p>
+      </section>
+
       {/* Summary Card */}
       <section className="card-surface p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
         <div className="flex items-start justify-between">
@@ -383,14 +504,20 @@ const Results = () => {
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-md bg-amber-50 border border-amber-200 p-2">
                   <p className="text-[10px] font-semibold text-amber-700">DOMAIN GAP</p>
-                  <p className="text-xs font-bold text-amber-700">{Math.max(0, benchmarkScore - (career.match || 0))}%</p>
+                  <p className="text-xs font-bold text-amber-700">
+                    {Number.isFinite(Number(career.domainGap))
+                      ? Math.round(Number(career.domainGap))
+                      : Math.max(0, 100 - (career.match || 0))}%
+                  </p>
                 </div>
                 <div className="rounded-md bg-red-50 border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-700">TECH GAP</p>
                   <p className="text-xs font-bold text-red-700">
-                    {career.requiredSkills?.length
-                      ? Math.round(((career.missingSkills?.length || 0) / career.requiredSkills.length) * 100)
-                      : Math.max(0, benchmarkScore - (career.match || 0))}%
+                    {Number.isFinite(Number(career.techGap))
+                      ? Math.round(Number(career.techGap))
+                      : career.requiredSkills?.length
+                        ? Math.round(((career.missingSkills?.length || 0) / career.requiredSkills.length) * 100)
+                        : Math.max(0, 100 - (career.match || 0))}%
                   </p>
                 </div>
               </div>

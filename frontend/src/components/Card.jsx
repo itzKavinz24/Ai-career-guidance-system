@@ -11,7 +11,7 @@ const Card = ({
   children,
 }) => {
   return (
-    <article className="bg-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-transform duration-300 border border-gray-200 flex h-full flex-col gap-3 p-5">
+    <article className="card-surface lift-on-hover slide-card flex h-full flex-col gap-3 p-5">
       <header className="flex items-start justify-between gap-3">
         <div className="space-y-1 flex-1">
           <h3 className="text-lg font-bold text-gray-900">
@@ -21,8 +21,8 @@ const Card = ({
         </div>
 
         {typeof match === 'number' && (
-          <div className="flex items-baseline gap-1 whitespace-nowrap">
-            <span className="text-lg font-bold text-green-600">{match}%</span>
+          <div className="pill flex items-baseline gap-1 whitespace-nowrap">
+            <span className="text-lg font-bold text-blue-700">{match}%</span>
             <span className="text-xs font-medium text-gray-500">match</span>
           </div>
         )}

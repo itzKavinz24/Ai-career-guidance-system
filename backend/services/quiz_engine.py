@@ -31,7 +31,7 @@ def initialize_quiz_state(skills: List[str], domain: str) -> Dict[str, object]:
         "difficulty_level": "easy",
         "correct_count": 0,
         "wrong_count": 0,
-        "repeat_fail_count": 0,
+        "current_difficulty_fail_count": 0,
         "question_buffer": [],
         "current_question": None,
         "skill_stats": skill_stats,
@@ -59,7 +59,7 @@ def _move_to_next_skill(state: Dict[str, object]) -> bool:
     state["current_skill_index"] = next_index
     state["current_skill"] = skills[next_index]
     state["difficulty_level"] = "easy"
-    state["repeat_fail_count"] = 0
+    state["current_difficulty_fail_count"] = 0
     state["question_buffer"] = []
     return True
 
@@ -124,22 +124,26 @@ def get_next_question(state: Dict[str, object], user_answer: str) -> Dict[str, o
 
     if is_correct:
         state["correct_count"] = int(state.get("correct_count", 0)) + 1
-        state["repeat_fail_count"] = 0
+        state["current_difficulty_fail_count"] = 0
         stat["correct"] = int(stat.get("correct", 0)) + 1
 
         current_idx = _difficulty_index(str(state.get("difficulty_level", "easy")))
         if current_idx < len(DIFFICULTY_LEVELS) - 1:
             state["difficulty_level"] = DIFFICULTY_LEVELS[current_idx + 1]
+            state["current_difficulty_fail_count"] = 0
             state["question_buffer"] = []
         else:
             _move_to_next_skill(state)
     else:
         state["wrong_count"] = int(state.get("wrong_count", 0)) + 1
         stat["wrong"] = int(stat.get("wrong", 0)) + 1
-        repeat_fail_count = int(state.get("repeat_fail_count", 0)) + 1
-        state["repeat_fail_count"] = repeat_fail_count
+        fail_count = int(state.get("current_difficulty_fail_count", 0)) + 1
+        state["current_difficulty_fail_count"] = fail_count
 
-        if repeat_fail_count >= 2:
+        # Asked behavior:
+        # - first failure in a difficulty -> ask one more question of same difficulty
+        # - second failure in same difficulty -> move to next skill without blocking
+        if fail_count >= 2:
             _move_to_next_skill(state)
         else:
             # First failure repeats same difficulty once.

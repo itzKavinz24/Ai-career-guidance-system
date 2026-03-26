@@ -127,8 +127,9 @@ const SkillInput = () => {
 
   return (
     <div className="space-y-8">
-      <section className="card-surface p-8">
-        <h1 className="text-3xl font-bold mb-2">
+      <section className="card-surface glow-ring p-8 relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-12 -right-10 h-32 w-32 rounded-full bg-indigo-300/25 blur-2xl" />
+        <h1 className="headline-display text-3xl font-bold mb-2">
           Tell us about yourself
         </h1>
         <p className="text-gray-600">
@@ -139,7 +140,7 @@ const SkillInput = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Skills */}
         <section className="card-surface p-6">
-          <h2 className="mb-2 font-semibold">Your Skills</h2>
+          <h2 className="mb-2 font-semibold text-slate-800">Your Skills</h2>
 
           <div className="space-y-3">
             <div className="flex gap-2 relative">
@@ -167,11 +168,11 @@ const SkillInput = () => {
 
               {/* 🔥 Suggestions Dropdown */}
               {suggestions.length > 0 && (
-                <div className="absolute top-12 left-0 w-full bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+                <div className="absolute top-12 left-0 w-full bg-white/95 border border-blue-100 rounded-xl shadow-xl max-h-44 overflow-y-auto z-10 backdrop-blur">
                   {suggestions.map((skill) => (
                     <div
                       key={skill}
-                      className="px-3 py-2 cursor-pointer hover:bg-brand-100 transition-all duration-300"
+                      className="px-3 py-2 cursor-pointer hover:bg-blue-50 transition-all duration-300"
                       onClick={() => handleSelectSkill(skill)}
                     >
                       {skill}
@@ -182,7 +183,7 @@ const SkillInput = () => {
             </div>
 
             {/* Selected skills */}
-            <div className="min-h-[6rem] bg-gray-50 p-3 rounded-lg">
+            <div className="min-h-[6rem] bg-white/70 border border-indigo-100 p-3 rounded-xl backdrop-blur-sm">
               {skills.length === 0 ? (
                 <p className="text-sm text-gray-500">
                   No skills added yet.
@@ -192,10 +193,10 @@ const SkillInput = () => {
                   {skills.map((skill) => (
                     <span
                       key={skill}
-                      className="bg-brand-500 text-white px-3 py-1 rounded-full flex items-center gap-2"
+                      className="chip px-3 py-1 rounded-full flex items-center gap-2"
                     >
                       {skill}
-                      <button onClick={() => handleRemoveSkill(skill)}>
+                      <button className="text-red-500" onClick={() => handleRemoveSkill(skill)}>
                         ×
                       </button>
                     </span>
@@ -208,7 +209,7 @@ const SkillInput = () => {
 
         {/* Domain */}
         <section className="card-surface p-6">
-          <h2 className="mb-2 font-semibold">Interest Area</h2>
+          <h2 className="mb-2 font-semibold text-slate-800">Interest Area</h2>
 
           <select
             className="select-field w-full"
@@ -226,12 +227,13 @@ const SkillInput = () => {
       <button
         className="btn-primary w-full py-3"
         onClick={handleStartQuiz}
+        disabled={loading}
       >
-        Continue →
+        {loading ? 'Preparing Quiz...' : 'Continue →'}
       </button>
 
       {message && (
-        <div className="text-red-500 text-sm">{message.text}</div>
+        <div className={message.type === 'error' ? 'message-error' : 'message-success'}>{message.text}</div>
       )}
     </div>
   );

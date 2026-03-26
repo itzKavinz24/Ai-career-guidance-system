@@ -12,8 +12,9 @@ function App() {
   return (
     <Router>
       <div className="app-shell">
+        <div className="tech-grid" />
         <Navbar />
-        <main className="page-container">
+        <main className="page-container premium-scrollbar">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/skills" element={<SkillInput />} />

@@ -107,7 +107,8 @@ const Quiz = () => {
 
   return (
     <div className="space-y-8">
-      <section className="card-surface p-8">
+      <section className="card-surface glow-ring p-8 relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-10 right-10 h-28 w-28 rounded-full bg-blue-300/30 blur-2xl" />
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="headline-display text-3xl font-bold text-gray-900">Career Aptitude Quiz</h1>
@@ -119,9 +120,9 @@ const Quiz = () => {
           </div>
         </div>
 
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-indigo-100 rounded-full h-2.5">
           <div
-            className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-blue-600 via-indigo-500 to-teal-400 h-2.5 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, progress)}%` }}
           />
         </div>
@@ -136,7 +137,7 @@ const Quiz = () => {
               key={index}
               onClick={() => handleAnswerClick(option)}
               disabled={submitting}
-              className="text-left p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50"
+              className="text-left p-4 rounded-xl border border-indigo-100 bg-white/75 hover:border-blue-400 hover:bg-blue-50/70 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 disabled:opacity-50"
             >
               <span className="text-lg font-medium text-gray-900">{option}</span>
             </button>
