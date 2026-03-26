@@ -1,103 +1,57 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
+
 from services import quiz_engine
 
-bp = Blueprint('quiz', __name__, url_prefix='/api/quiz')
+bp = Blueprint("quiz", __name__)
 
-@bp.route('/start', methods=['POST'])
+
+@bp.route("/start-quiz", methods=["POST"])
 def start_quiz():
-    """
-    Start a new quiz session
-    Expected JSON: {'user_id': 'user123', 'difficulty': 'medium'}
-    """
-    try:
-        data = request.get_json()
-        user_id = data.get('user_id')
-        difficulty = data.get('difficulty', 'medium')
-        skills = data.get('skills', [])
-        
-        if not user_id:
-            return {'error': 'User ID is required'}, 400
-        
-        questions = quiz_engine.get_skill_based_questions(
-            skills=skills,
-            difficulty=difficulty,
-            num_questions=10
-        )
-        
-        return {
-            'message': 'Quiz started',
-            'user_id': user_id,
-            'difficulty': difficulty,
-            'skills_used': skills,
-            'total_questions': len(questions),
-            'questions': questions
-        }, 200
-    except Exception as e:
-        return {'error': str(e)}, 500
+    """Initialize adaptive quiz state and return the first question."""
+    data = request.get_json(silent=True) or {}
+    skills = data.get("skills")
+    domain = data.get("domain")
 
-@bp.route('/submit-answer', methods=['POST'])
-def submit_answer():
-    """
-    Submit an answer to a quiz question
-    Expected JSON: {'user_id': 'user123', 'question_id': 'q1', 'answer': 'option_a'}
-    """
-    try:
-        data = request.get_json()
-        user_id = data.get('user_id')
-        question_id = data.get('question_id')
-        answer = data.get('answer')
-        
-        if not all([user_id, question_id, answer]):
-            return {'error': 'User ID, question ID, and answer are required'}, 400
-        
-        # Validate and record the answer
-        is_correct = quiz_engine.validate_answer(question_id, answer)
-        quiz_engine.record_answer(user_id, question_id, answer, is_correct)
-        
-        return {
-            'message': 'Answer recorded',
-            'question_id': question_id,
-            'is_correct': is_correct
-        }, 200
-    except Exception as e:
-        return {'error': str(e)}, 500
+    if not isinstance(skills, list) or not skills:
+        return {"error": "skills must be a non-empty array"}, 400
+    if not isinstance(domain, str) or not domain.strip():
+        return {"error": "domain is required"}, 400
 
-@bp.route('/get-question/<question_id>', methods=['GET'])
-def get_question(question_id):
-    """
-    Get a specific question by ID
-    """
     try:
-        question = quiz_engine.get_question(question_id)
-        
-        if not question:
-            return {'error': 'Question not found'}, 404
-        
+        state = quiz_engine.initialize_quiz_state(skills=skills, domain=domain)
+        first_question = quiz_engine.get_first_question(state)
         return {
-            'message': 'Question retrieved',
-            'question': question
+            "message": "Quiz started",
+            "state": state,
+            "question": first_question,
+            "quiz_complete": bool(state.get("quiz_complete", False)),
         }, 200
-    except Exception as e:
-        return {'error': str(e)}, 500
+    except Exception:
+        return {"error": "Failed to start quiz"}, 500
 
-@bp.route('/end', methods=['POST'])
-def end_quiz():
-    """
-    End the quiz and get results
-    Expected JSON: {'user_id': 'user123'}
-    """
+
+@bp.route("/next-question", methods=["POST"])
+def next_question():
+    """Evaluate selected answer and return next adaptive question."""
+    data = request.get_json(silent=True) or {}
+    state = data.get("state")
+    selected_answer = data.get("selected_answer")
+
+    if not isinstance(state, dict):
+        return {"error": "state must be an object"}, 400
+    if not isinstance(selected_answer, str) or not selected_answer.strip():
+        return {"error": "selected_answer is required"}, 400
+
     try:
-        data = request.get_json()
-        user_id = data.get('user_id')
-        
-        if not user_id:
-            return {'error': 'User ID is required'}, 400
-        
-        results = quiz_engine.calculate_results(user_id)
-        
+        result = quiz_engine.get_next_question(state=state, user_answer=selected_answer)
         return {
-            'message': 'Quiz ended',
-            'results': results
+            "message": "Next question generated",
+            "state": result["state"],
+            "question": result["next_question"],
+            "is_correct": result["is_correct"],
+            "quiz_complete": result["quiz_complete"],
         }, 200
-    except Exception as e:
-        return {'error': str(e)}, 500
+    except ValueError as exc:
+        return {"error": str(exc)}, 400
+    except Exception:
+        return {"error": "Failed to generate next question"}, 500

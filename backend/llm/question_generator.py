@@ -1,156 +1,131 @@
-"""
-LLM-based question generator for career aptitude testing
-Uses AI to generate contextual career-related questions
-"""
+"""Claude-powered question generator for adaptive career quizzes."""
 
-def generate_custom_questions(topic, difficulty='medium', num_questions=5):
-    """
-    Generate custom quiz questions using LLM
-    
-    Args:
-        topic: Career or skill topic
-        difficulty: 'easy', 'medium', 'hard'
-        num_questions: Number of questions to generate
-    
-    Returns:
-        List of generated questions
-    """
-    # This would integrate with OpenAI API or similar
-    # For now, returning a template structure
-    
-    questions = []
-    for i in range(num_questions):
-        question = {
-            'id': f'generated_{topic}_{i}',
-            'topic': topic,
-            'difficulty': difficulty,
-            'question': f'Sample question about {topic} at {difficulty} level - {i+1}',
-            'options': [
-                'Option A',
-                'Option B',
-                'Option C',
-                'Option D'
+import json
+import os
+from typing import Dict, List
+
+from dotenv import load_dotenv
+
+try:
+    from anthropic import Anthropic
+except ImportError:  # pragma: no cover - fallback path for missing dependency
+    Anthropic = None
+
+load_dotenv()
+
+_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+_CLIENT = Anthropic(api_key=_API_KEY) if Anthropic and _API_KEY else None
+
+_VALID_DIFFICULTIES = {"easy", "medium", "hard"}
+
+
+def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
+    """Return deterministic fallback questions when API/JSON parsing fails."""
+    prompt_scope = f"{skill} in {domain}" if domain else skill
+    return [
+        {
+            "question": f"Which activity best shows practical {prompt_scope} ability at {difficulty} level?",
+            "options": [
+                "Break a complex task into smaller steps and execute them",
+                "Wait for full instructions before starting",
+                "Avoid experimenting with new approaches",
+                "Focus only on speed over quality",
             ],
-            'correct_answer': 'Option A',
-            'explanation': f'This question tests knowledge of {topic}',
-            'generated': True
-        }
-        questions.append(question)
-    
-    return questions
+            "answer": "Break a complex task into smaller steps and execute them",
+        },
+        {
+            "question": f"When solving a {prompt_scope} challenge, what is the best first step for {difficulty} learners?",
+            "options": [
+                "Clarify the problem goals and constraints",
+                "Skip planning and start coding immediately",
+                "Copy a solution without understanding it",
+                "Ignore feedback from users or mentors",
+            ],
+            "answer": "Clarify the problem goals and constraints",
+        },
+    ]
 
-def generate_adaptive_questions(user_performance, difficulty_level='medium'):
-    """
-    Generate questions adaptively based on user performance
-    
-    Args:
-        user_performance: User's performance data
-        difficulty_level: Current difficulty level
-    
-    Returns:
-        List of adaptively generated questions
-    """
-    if user_performance >= 0.8:
-        next_difficulty = 'hard'
-    elif user_performance >= 0.6:
-        next_difficulty = 'medium'
-    else:
-        next_difficulty = 'easy'
-    
-    questions = generate_custom_questions(
-        topic='Career Aptitude',
-        difficulty=next_difficulty,
-        num_questions=3
+
+def _extract_json_array(raw_text: str) -> str:
+    """Trim non-JSON wrapper text and keep only the first JSON array."""
+    start = raw_text.find("[")
+    end = raw_text.rfind("]")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("No JSON array found in model output")
+    return raw_text[start : end + 1]
+
+
+def _normalize_questions(parsed: object) -> List[Dict[str, object]]:
+    """Validate/normalize Claude output to exactly two safe question objects."""
+    if not isinstance(parsed, list):
+        raise ValueError("Claude output is not a list")
+
+    normalized: List[Dict[str, object]] = []
+    for item in parsed:
+        if not isinstance(item, dict):
+            continue
+
+        question = str(item.get("question", "")).strip()
+        options = item.get("options", [])
+        answer = str(item.get("answer", "")).strip()
+
+        if not question or not isinstance(options, list) or len(options) != 4:
+            continue
+
+        options = [str(option).strip() for option in options]
+        if not all(options):
+            continue
+
+        if answer not in options:
+            answer = options[0]
+
+        normalized.append({"question": question, "options": options, "answer": answer})
+        if len(normalized) == 2:
+            break
+
+    if len(normalized) < 2:
+        raise ValueError("Insufficient valid questions in Claude output")
+
+    return normalized
+
+
+def generate_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
+    """Generate two multiple-choice questions for a single skill and difficulty."""
+    safe_skill = (skill or "general problem solving").strip()
+    safe_domain = (domain or "career aptitude").strip()
+    safe_difficulty = (difficulty or "easy").strip().lower()
+    if safe_difficulty not in _VALID_DIFFICULTIES:
+        safe_difficulty = "easy"
+
+    if _CLIENT is None:
+        return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
+
+    prompt = (
+        "You are generating a career aptitude quiz."
+        " Return STRICT JSON only, no markdown and no explanation."
+        " Output must be a JSON array with exactly 2 objects."
+        " Each object must have keys: question, options, answer."
+        " options must be an array of exactly 4 strings."
+        " answer must exactly match one option string."
+        f" Domain: {safe_domain}. Skill: {safe_skill}. Difficulty: {safe_difficulty}."
     )
-    
-    return questions
 
-def generate_skill_assessment_questions(skills, num_questions=10):
-    """
-    Generate skill assessment questions based on provided skills
-    
-    Args:
-        skills: List of skills to assess
-        num_questions: Number of questions per skill
-    
-    Returns:
-        List of skill assessment questions
-    """
-    questions = []
-    
-    for skill in skills:
-        skill_questions = generate_custom_questions(
-            topic=skill,
-            difficulty='medium',
-            num_questions=num_questions // len(skills) if skills else num_questions
+    try:
+        response = _CLIENT.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=700,
+            temperature=0.4,
+            messages=[{"role": "user", "content": prompt}],
         )
-        questions.extend(skill_questions)
-    
-    return questions
 
-def generate_career_compatibility_questions(career, num_questions=5):
-    """
-    Generate questions to assess compatibility with a specific career
-    
-    Args:
-        career: Career name or ID
-        num_questions: Number of questions
-    
-    Returns:
-        List of compatibility assessment questions
-    """
-    questions = generate_custom_questions(
-        topic=f'{career} compatibility',
-        difficulty='medium',
-        num_questions=num_questions
-    )
-    
-    return questions
+        text_chunks = []
+        for block in response.content:
+            if getattr(block, "type", "") == "text":
+                text_chunks.append(block.text)
 
-def improve_question_quality(question, feedback=None):
-    """
-    Use LLM to improve question quality based on feedback
-    
-    Args:
-        question: Question dictionary
-        feedback: Optional feedback on the question
-    
-    Returns:
-        Improved question dictionary
-    """
-    improved = question.copy()
-    
-    if feedback:
-        improved['feedback_incorporated'] = True
-        improved['revised_question'] = f"{question['question']} [REVISED]"
-    
-    return improved
-
-def generate_follow_up_questions(initial_answer, analysis_results, num_questions=3):
-    """
-    Generate follow-up questions based on initial answers and analysis
-    
-    Args:
-        initial_answer: User's initial answer/response
-        analysis_results: Analysis of that response
-        num_questions: Number of follow-up questions
-    
-    Returns:
-        List of follow-up questions
-    """
-    follow_ups = []
-    
-    # Generate questions to explore areas of weakness or interest
-    topics = analysis_results.get('focus_areas', ['Career Aptitude'])
-    
-    for topic in topics[:num_questions]:
-        question = {
-            'id': f'followup_{topic}',
-            'is_follow_up': True,
-            'original_topic': initial_answer,
-            'follow_up_topic': topic,
-            'question': f'Tell us more about {topic}'
-        }
-        follow_ups.append(question)
-    
-    return follow_ups
+        raw_text = "\n".join(text_chunks).strip()
+        json_array_text = _extract_json_array(raw_text)
+        parsed = json.loads(json_array_text)
+        return _normalize_questions(parsed)
+    except Exception:
+        return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
