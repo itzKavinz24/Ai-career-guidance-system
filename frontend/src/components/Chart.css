@@ -1,0 +1,95 @@
+/* Chart Component Styles */
+.chart {
+  margin: 30px 0;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.chart h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.chart-item {
+  display: grid;
+  grid-template-columns: 150px 1fr 80px;
+  gap: 15px;
+  align-items: center;
+}
+
+.chart-label {
+  font-weight: bold;
+  color: #333;
+  min-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-bar {
+  width: 100%;
+  height: 25px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-progress.high {
+  background: linear-gradient(90deg, #28a745, #1e7e34);
+}
+
+.chart-progress.medium {
+  background: linear-gradient(90deg, #ffc107, #e0a800);
+}
+
+.chart-progress.low {
+  background: linear-gradient(90deg, #dc3545, #a71d2a);
+}
+
+.chart-value {
+  text-align: center;
+  font-weight: bold;
+  color: #007bff;
+  min-width: 80px;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .chart-item {
+    grid-template-columns: 100px 1fr 60px;
+    gap: 10px;
+  }
+
+  .chart-label {
+    min-width: 100px;
+    font-size: 0.9em;
+  }
+
+  .chart-value {
+    min-width: 60px;
+    font-size: 0.9em;
+  }
+}

@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-base: #ffffff;
+  --bg-secondary: #f8fafb;
+  --surface: #ffffff;
+  --surface-border: #e5e7eb;
+  --text-main: #1f2937;
+  --text-secondary: #6b7280;
+  --accent: #3b82f6;
+  --accent-light: #dbeafe;
+}
+
+body {
+  @apply font-sans antialiased;
+  background: var(--bg-base);
+  color: var(--text-main);
+}
+
+.app-shell {
+  @apply min-h-screen flex flex-col relative bg-white;
+}
+
+.page-container {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full;
+  animation: page-enter 420ms ease-out;
+}
+
+.card-surface {
+  border: 1px solid var(--surface-border);
+  @apply rounded-xl shadow-md transition-all hover:shadow-lg;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-lg px-6 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-lg border px-6 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
+  border-color: #bfdbfe;
+  background: #ffffff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.pill {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  border: 1px solid var(--surface-border);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.tag {
+  @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium;
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  border: 1px solid var(--surface-border);
+}
+
+.tag-remove {
+  @apply rounded-full px-1.5 py-0.5 text-[10px] font-bold ml-1 cursor-pointer;
+  background: transparent;
+  color: #ef4444;
+}
+
+.tag-remove:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.input-field {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  border-color: var(--surface-border);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
+.select-field {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  border-color: var(--surface-border);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
+.section-title {
+  @apply text-2xl font-bold tracking-tight;
+  font-family: 'Sora', 'Space Grotesk', sans-serif;
+  color: var(--text-main);
+}
+
+.section-subtitle {
+  @apply text-sm;
+  color: var(--text-secondary);
+}
+
+.badge-trend-high {
+  @apply inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/40;
+}
+
+.badge-trend-medium {
+  @apply inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 ring-1 ring-inset ring-amber-500/40;
+}
+
+.badge-trend-low {
+  @apply inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-medium text-slate-300 ring-1 ring-inset ring-slate-500/40;
+}
+
+.message-success {
+  @apply rounded-lg border px-4 py-3 text-sm;
+  border-color: #86efac;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.message-error {
+  @apply rounded-lg border px-4 py-3 text-sm;
+  border-color: #fca5a5;
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.progress-track {
+  @apply h-2 w-full overflow-hidden rounded-full bg-gray-200;
+}
+
+.progress-fill {
+  @apply h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all;
+}
+
+.pill-muted {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.headline-display {
+  font-family: 'Sora', 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

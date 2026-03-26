@@ -1,0 +1,262 @@
+[
+  {
+    "id": "career_001",
+    "name": "Software Engineer",
+    "description": "Develops, designs, and tests software applications and systems",
+    "required_education": "Bachelor's degree in Computer Science or related field",
+    "required_skills": ["Python", "Java", "JavaScript", "Problem Solving", "System Design"],
+    "related_interests": ["technology", "problem-solving", "innovation"],
+    "average_salary": 110000,
+    "entry_salary": 80000,
+    "senior_salary": 150000,
+    "experienced_salary": 180000,
+    "salary_growth_rate": 3.5,
+    "currency": "USD",
+    "job_outlook": "Faster than average growth",
+    "growth_rate": 22,
+    "openings_per_year": 15000,
+    "industry": "Technology",
+    "work_environment": "Office, Remote, or Hybrid",
+    "pros": [
+      "High salary potential",
+      "Remote work opportunities",
+      "High demand",
+      "Continuous learning"
+    ],
+    "cons": [
+      "High pressure",
+      "Constant technology changes",
+      "Long hours sometimes"
+    ],
+    "specializations": [
+      "Web Development",
+      "Mobile Development",
+      "Data Engineering",
+      "DevOps"
+    ],
+    "advancement_paths": [
+      "Senior Software Engineer",
+      "Architect",
+      "Engineering Manager",
+      "Technical Lead"
+    ],
+    "additional_certifications": [
+      "AWS Certified Solutions Architect",
+      "Google Cloud Professional",
+      "Scrum Master"
+    ],
+    "further_education_options": [
+      "Master's in Computer Science",
+      "MBA"
+    ],
+    "growth_potential": "Very High",
+    "why_emerging": "AI and cloud computing demand"
+  },
+  {
+    "id": "career_002",
+    "name": "Data Scientist",
+    "description": "Analyzes and interprets complex data to help businesses make decisions",
+    "required_education": "Bachelor's degree in Data Science, Statistics, or related field",
+    "required_skills": ["Python", "R", "SQL", "Machine Learning", "Statistics", "Data Visualization"],
+    "related_interests": ["data-analysis", "mathematics", "research", "technology"],
+    "average_salary": 105000,
+    "entry_salary": 75000,
+    "senior_salary": 140000,
+    "experienced_salary": 170000,
+    "salary_growth_rate": 3.2,
+    "currency": "USD",
+    "job_outlook": "Much faster than average growth",
+    "growth_rate": 26,
+    "openings_per_year": 8000,
+    "industry": "Technology, Finance, Healthcare",
+    "work_environment": "Office, Remote, Hybrid",
+    "pros": [
+      "High salary",
+      "Cutting-edge field",
+      "Diverse industries",
+      "Problem-solving focused"
+    ],
+    "cons": [
+      "Requires strong math skills",
+      "Long projects",
+      "Can be working with incomplete data"
+    ],
+    "specializations": [
+      "Machine Learning Engineering",
+      "NLP",
+      "Computer Vision",
+      "Analytics"
+    ],
+    "advancement_paths": [
+      "Senior Data Scientist",
+      "ML Engineer",
+      "Data Science Manager",
+      "Research Scientist"
+    ],
+    "additional_certifications": [
+      "Google Cloud Data Engineer",
+      "AWS Machine Learning"
+    ],
+    "further_education_options": [
+      "Master's in Data Science",
+      "PhD in Computer Science"
+    ],
+    "growth_potential": "Very High",
+    "why_emerging": "AI/ML revolution and data-driven decisions"
+  },
+  {
+    "id": "career_003",
+    "name": "UX/UI Designer",
+    "description": "Designs user interfaces and experiences for digital products",
+    "required_education": "Bachelor's degree in Design, HCI, or related field",
+    "required_skills": ["UI Design", "UX Research", "Figma", "Prototyping", "User Psychology"],
+    "related_interests": ["design", "technology", "creativity", "user-experience"],
+    "average_salary": 85000,
+    "entry_salary": 60000,
+    "senior_salary": 120000,
+    "experienced_salary": 140000,
+    "salary_growth_rate": 2.8,
+    "currency": "USD",
+    "job_outlook": "Average growth",
+    "growth_rate": 13,
+    "openings_per_year": 5000,
+    "industry": "Technology, E-commerce, Any Digital Business",
+    "work_environment": "Office, Remote, Hybrid",
+    "pros": [
+      "Creative work",
+      "Immediate feedback",
+      "Growing field",
+      "Portfolio-based"
+    ],
+    "cons": [
+      "Design trends change quickly",
+      "Client feedback can be subjective",
+      "Lower entry salary than engineering"
+    ],
+    "specializations": [
+      "Product Design",
+      "Web Design",
+      "Mobile App Design",
+      "VR/AR Design"
+    ],
+    "advancement_paths": [
+      "Senior Product Designer",
+      "Design Lead",
+      "Design Director"
+    ],
+    "additional_certifications": [
+      "UX Certification from Nielsen Norman",
+      "Google UX Design Certificate"
+    ],
+    "further_education_options": [
+      "Master's in HCI",
+      "Master's in Interaction Design"
+    ],
+    "growth_potential": "High",
+    "why_emerging": "User-centric design becoming more important"
+  },
+  {
+    "id": "career_004",
+    "name": "Cloud Solutions Architect",
+    "description": "Designs and implements scalable cloud infrastructure solutions",
+    "required_education": "Bachelor's degree in Computer Science or related field",
+    "required_skills": ["AWS", "Azure", "Cloud Architecture", "DevOps", "Infrastructure Design", "Security"],
+    "related_interests": ["cloud-computing", "technology", "infrastructure", "problem-solving"],
+    "average_salary": 125000,
+    "entry_salary": 90000,
+    "senior_salary": 160000,
+    "experienced_salary": 200000,
+    "salary_growth_rate": 4.2,
+    "currency": "USD",
+    "job_outlook": "Much faster than average growth",
+    "growth_rate": 28,
+    "openings_per_year": 10000,
+    "industry": "Technology, Enterprise",
+    "work_environment": "Office, Remote, Hybrid",
+    "pros": [
+      "Very high salary",
+      "High demand",
+      "Strategic role",
+      "Vendor training available"
+    ],
+    "cons": [
+      "Requires certification investment",
+      "Complex problem-solving",
+      "24/7 support sometimes"
+    ],
+    "specializations": [
+      "AWS Architecture",
+      "Azure Architecture",
+      "GCP Architecture",
+      "Security Architecture"
+    ],
+    "advancement_paths": [
+      "Principal Architect",
+      "Enterprise Architect",
+      "Chief Technology Officer"
+    ],
+    "additional_certifications": [
+      "AWS Solutions Architect Associate",
+      "AWS Solutions Architect Professional",
+      "Azure Solutions Architect Expert"
+    ],
+    "further_education_options": [
+      "Advanced AWS Training",
+      "MBA"
+    ],
+    "growth_potential": "Very High",
+    "why_emerging": "Cloud adoption accelerating across industries"
+  },
+  {
+    "id": "career_005",
+    "name": "Data Analyst",
+    "description": "Transforms raw data into actionable business insights",
+    "required_education": "Bachelor's degree in any field with analytics focus",
+    "required_skills": ["SQL", "Excel", "Data Visualization", "Excel", "Python", "Business Analysis"],
+    "related_interests": ["data-analysis", "business", "problem-solving", "analytics"],
+    "average_salary": 70000,
+    "entry_salary": 50000,
+    "senior_salary": 100000,
+    "experienced_salary": 120000,
+    "salary_growth_rate": 2.5,
+    "currency": "USD",
+    "job_outlook": "Faster than average growth",
+    "growth_rate": 23,
+    "openings_per_year": 20000,
+    "industry": "All Industries",
+    "work_environment": "Office, Remote, Hybrid",
+    "pros": [
+      "Good entry point to data field",
+      "Diverse industry opportunities",
+      "Growing demand",
+      "Creative problem-solving"
+    ],
+    "cons": [
+      "Repetitive tasks sometimes",
+      "Data quality issues",
+      "Lower salary than scientist"
+    ],
+    "specializations": [
+      "Business Analytics",
+      "Financial Analytics",
+      "Marketing Analytics",
+      "Healthcare Analytics"
+    ],
+    "advancement_paths": [
+      "Senior Data Analyst",
+      "Analytics Manager",
+      "Data Scientist"
+    ],
+    "additional_certifications": [
+      "Google Data Analytics Specialist",
+      "Microsoft Data Analyst",
+      "Tableau Desktop Specialist"
+    ],
+    "further_education_options": [
+      "Master's in Data Analytics",
+      "Master's in Business Analytics"
+    ],
+    "growth_potential": "High",
+    "why_emerging": "Every company needs data insights"
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "q001",
+    "topic": "programming",
+    "difficulty": "easy",
+    "question": "Which of the following is not a programming language?",
+    "options": ["Python", "JavaScript", "CSS", "Java"],
+    "correct_answer": "CSS",
+    "explanation": "CSS (Cascading Style Sheets) is a markup language for styling web pages, not a programming language. Python, JavaScript, and Java are all programming languages."
+  },
+  {
+    "id": "q002",
+    "topic": "problem-solving",
+    "difficulty": "easy",
+    "question": "What is the first step in problem-solving?",
+    "options": [
+      "Implement a solution",
+      "Understand the problem",
+      "Test the solution",
+      "Optimize the code"
+    ],
+    "correct_answer": "Understand the problem",
+    "explanation": "Understanding the problem is crucial before attempting any solution. It prevents wasted effort on incorrect implementations."
+  },
+  {
+    "id": "q003",
+    "topic": "data-structures",
+    "difficulty": "medium",
+    "question": "What is the time complexity of searching in a binary search tree?",
+    "options": ["O(1)", "O(n)", "O(log n)", "O(n^2)"],
+    "correct_answer": "O(log n)",
+    "explanation": "In a balanced binary search tree, searching has O(log n) time complexity. In worst case (unbalanced tree), it can be O(n)."
+  },
+  {
+    "id": "q004",
+    "topic": "database",
+    "difficulty": "medium",
+    "question": "Which SQL clause is used to filter records?",
+    "options": ["SELECT", "WHERE", "JOIN", "GROUP BY"],
+    "correct_answer": "WHERE",
+    "explanation": "The WHERE clause is used to filter records based on specified conditions. It's essential for querying specific data."
+  },
+  {
+    "id": "q005",
+    "topic": "soft-skills",
+    "difficulty": "easy",
+    "question": "Which soft skill is most important for teamwork?",
+    "options": [
+      "Communication",
+      "Speed",
+      "Coding ability",
+      "Age experience"
+    ],
+    "correct_answer": "Communication",
+    "explanation": "Communication is fundamental for effective teamwork. It enables coordination, conflict resolution, and knowledge sharing."
+  },
+  {
+    "id": "q006",
+    "topic": "web-development",
+    "difficulty": "medium",
+    "question": "What does REST stand for?",
+    "options": [
+      "Representational State Transfer",
+      "Remote Electronic Service Transfer",
+      "Resource Efficient State Transfer",
+      "Relative Environment Service Transfer"
+    ],
+    "correct_answer": "Representational State Transfer",
+    "explanation": "REST stands for Representational State Transfer, an architectural style for designing networked applications."
+  },
+  {
+    "id": "q007",
+    "topic": "cloud-computing",
+    "difficulty": "easy",
+    "question": "Which of the following is a cloud service provider?",
+    "options": ["AWS", "Docker", "Git", "Linux"],
+    "correct_answer": "AWS",
+    "explanation": "AWS (Amazon Web Services) is a major cloud service provider. Docker is containerization, Git is version control, and Linux is an operating system."
+  },
+  {
+    "id": "q008",
+    "topic": "machine-learning",
+    "difficulty": "hard",
+    "question": "What is the purpose of cross-validation in machine learning?",
+    "options": [
+      "To increase model accuracy",
+      "To assess model performance reliably",
+      "To reduce training time",
+      "To prevent overfitting completely"
+    ],
+    "correct_answer": "To assess model performance reliably",
+    "explanation": "Cross-validation helps assess how well a model generalizes to new data by using multiple train-test splits."
+  },
+  {
+    "id": "q009",
+    "topic": "career-aptitude",
+    "difficulty": "medium",
+    "question": "What matters most in choosing a career for you?",
+    "options": [
+      "Salary only",
+      "Skills, interests, and market demand alignment",
+      "Family expectations",
+      "Peer pressure"
+    ],
+    "correct_answer": "Skills, interests, and market demand alignment",
+    "explanation": "A fulfilling career should align with your skills, interests, and have market demand for sustainability."
+  },
+  {
+    "id": "q010",
+    "topic": "technology-trends",
+    "difficulty": "medium",
+    "question": "Which of these is currently a fast-growing technology?",
+    "options": [
+      "Flash websites",
+      "Artificial Intelligence & Machine Learning",
+      "Java applets",
+      "XML markup"
+    ],
+    "correct_answer": "Artificial Intelligence & Machine Learning",
+    "explanation": "AI and Machine Learning are among the fastest-growing technology areas with applications across all industries."
+  }
+]
