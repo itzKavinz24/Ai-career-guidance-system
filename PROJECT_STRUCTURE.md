@@ -28,14 +28,10 @@ ai-career-guidance/
 │   ├── services/                   ← Business Logic
 │   │   ├── 📄 __init__.py
 │   │   ├── 📄 quiz_engine.py       ← Quiz management
+│   │   ├── 📄 question_generator.py ← Local question generation
 │   │   ├── 📄 scoring.py           ← Scoring logic
 │   │   ├── 📄 matcher.py           ← Career matching
 │   │   └── 📄 trends.py            ← Market trends
-│   │
-│   ├── llm/                        ← AI Integrations
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 question_generator.py ← Generate questions
-│   │   └── 📄 explanation.py       ← Generate explanations
 │   │
 │   ├── data/                       ← Static Data
 │   │   ├── 📄 __init__.py
@@ -113,19 +109,13 @@ ai-career-guidance/
 
 #### Services (Business Logic)
 
-| File                      | Functions                                        |
-| ------------------------- | ------------------------------------------------ |
-| `services/quiz_engine.py` | Quiz question management, answer validation      |
-| `services/scoring.py`     | Skill evaluation, score calculation, assessment  |
-| `services/matcher.py`     | Career matching, compatibility scoring           |
-| `services/trends.py`      | Market trends, salary data, growth opportunities |
-
-#### LLM (AI Integration)
-
-| File                        | Purpose                               |
-| --------------------------- | ------------------------------------- |
-| `llm/question_generator.py` | Generate custom quiz questions        |
-| `llm/explanation.py`        | Generate AI explanations and insights |
+| File                             | Functions                                        |
+| -------------------------------- | ------------------------------------------------ |
+| `services/quiz_engine.py`        | Quiz question management, answer validation      |
+| `services/question_generator.py` | Local adaptive question generation               |
+| `services/scoring.py`            | Skill evaluation, score calculation, assessment  |
+| `services/matcher.py`            | Career matching, compatibility scoring           |
+| `services/trends.py`             | Market trends, salary data, growth opportunities |
 
 #### Data
 

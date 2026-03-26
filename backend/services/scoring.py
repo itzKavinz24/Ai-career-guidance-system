@@ -64,7 +64,7 @@ def _skill_demand_ratio(skill, demand_index, max_frequency):
     return best_ratio
 
 
-def _llm_reasoning(skill, raw_ratio):
+def _demand_reasoning(skill, raw_ratio):
     if raw_ratio >= 0.8:
         return f"{skill} is strongly represented across fast-growing careers, so demand is very high."
     if raw_ratio >= 0.5:
@@ -75,7 +75,7 @@ def _llm_reasoning(skill, raw_ratio):
 
 
 def _compute_relative_demand_scores(skills):
-    # Simulate an asynchronous LLM-style scoring task.
+    # Simulate asynchronous demand-based scoring work.
     time.sleep(1.0)
 
     demand_index, max_frequency = _build_demand_index()
@@ -102,7 +102,7 @@ def _compute_relative_demand_scores(skills):
             'relative_demand_score': relative_score,
             'market_demand_score': item['demand_score'],
             'level': get_proficiency_level(relative_score),
-            'reasoning': _llm_reasoning(item['skill'], item['raw_ratio']),
+            'reasoning': _demand_reasoning(item['skill'], item['raw_ratio']),
             'scoring_basis': 'relative_market_demand',
         })
 

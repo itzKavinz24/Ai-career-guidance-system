@@ -242,7 +242,6 @@ ai-career-guidance/
 │   ├── requirements.txt       # Python dependencies
 │   ├── routes/               # API endpoints
 │   ├── services/             # Business logic
-│   ├── llm/                  # AI integrations
 │   ├── data/                 # JSON data files
 │   └── db/                   # Database files
 │

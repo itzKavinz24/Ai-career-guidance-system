@@ -15,12 +15,10 @@ backend/
 │   └── match.py         # Career matching routes
 ├── services/            # Business logic
 │   ├── quiz_engine.py   # Quiz logic
+│   ├── question_generator.py # Local question generation
 │   ├── scoring.py       # Scoring logic
 │   ├── matcher.py       # Career matching logic
 │   └── trends.py        # Market trends and insights
-├── llm/                 # LLM integrations
-│   ├── question_generator.py  # AI question generation
-│   └── explanation.py         # AI explanations
 ├── data/               # Data files
 │   ├── careers.json    # Career database
 │   └── questions.json  # Quiz questions
@@ -90,6 +88,8 @@ Create a `.env` file in the backend directory:
 FLASK_ENV=development
 FLASK_DEBUG=True
 DATABASE_URL=sqlite:///db/database.db
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.1-8b-instant
 ```
 
 ## Services Overview
@@ -110,10 +110,9 @@ Matches user profiles to suitable careers based on skills and interests.
 
 Provides market trends, salary data, and growth opportunities.
 
-### LLM Services
+### Question Generation
 
-- **Question Generator**: Generates custom quiz questions
-- **Explanation**: Provides AI-generated explanations and insights
+- **Question Generator**: Uses Groq API when configured, with local fallback
 
 ## Data Files
 
@@ -141,12 +140,11 @@ Contains quiz questions with:
 
 - The backend uses SQLite for simplicity in development
 - For production, consider upgrading to PostgreSQL
-- LLM functions are scaffolded and ready for API integration
+- Question generation is local and does not require external AI services
 - All routes include error handling and validation
 
 ## Future Enhancements
 
-- Integration with OpenAI API for dynamic question generation
 - Advanced analytics and reporting
 - User authentication and authorization
 - Caching layer for performance optimization

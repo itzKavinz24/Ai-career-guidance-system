@@ -1,85 +1,107 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-const mockQuestions = [
-  {
-    id: 1,
-    question: 'What motivates you most in a career?',
-    options: ['Problem-solving', 'Creative expression', 'Helping others', 'Financial success'],
-  },
-  {
-    id: 2,
-    question: 'How do you prefer to work?',
-    options: ['Independently', 'In a team', 'With mentorship', 'Leading others'],
-  },
-  {
-    id: 3,
-    question: 'What is your biggest strength?',
-    options: ['Technical skills', 'Communication', 'Analytical thinking', 'Leadership'],
-  },
-  {
-    id: 4,
-    question: 'What aspect of work do you enjoy most?',
-    options: ['Building things', 'Analyzing data', 'Teaching others', 'Managing projects'],
-  },
-  {
-    id: 5,
-    question: 'How do you handle challenges?',
-    options: ['Break down and solve', 'Seek help', 'Iterate quickly', 'Plan thoroughly'],
-  },
-];
+import { startQuiz, submitAnswer } from '../services/api';
 
 const Quiz = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [score, setScore] = useState(0);
-  const [questions] = useState(mockQuestions);
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState(null);
+  const [question, setQuestion] = useState(null);
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const skills = useMemo(() => location.state?.skills || [], [location.state?.skills]);
   const domain = location.state?.domain || '';
 
   useEffect(() => {
-    if (!skills || skills.length === 0) {
-      navigate('/skills');
-    }
-  }, [skills, navigate]);
+    const initialize = async () => {
+      if (!skills || skills.length === 0) {
+        navigate('/skills');
+        return;
+      }
 
-  const handleAnswerClick = (selectedIndex) => {
-    // Calculate score based on answer
-    if (selectedIndex === 0) {
-      setScore((prev) => prev + 20);
-    }
+      setLoading(true);
+      setError('');
+      try {
+        const response = await startQuiz(skills, domain || 'general');
+        setState(response.state || null);
+        setQuestion(response.question || null);
+      } catch (e) {
+        setError('Failed to load quiz questions. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (currentQuestion + 1 < questions.length) {
-      setCurrentQuestion((prev) => prev + 1);
-    } else {
-      handleQuizEnd();
-    }
-  };
+    initialize();
+  }, [skills, domain, navigate]);
 
-  const handleQuizEnd = async () => {
-    setLoading(true);
-    // Simulate quiz completion
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
+  const handleQuizEnd = (finalCorrect, finalAnswered) => {
+    const quizScore = finalCorrect * 20;
     navigate('/results', {
       state: {
         skills,
         domain,
-        quizScore: score,
-        totalQuestions: questions.length,
+        quizScore,
+        totalQuestions: Math.max(finalAnswered, 1),
       },
     });
   };
 
-  if (questions.length === 0) {
+  const handleAnswerClick = async (selectedAnswer) => {
+    if (!state || !question || submitting) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await submitAnswer(state, selectedAnswer);
+      const nextAnsweredCount = answeredCount + 1;
+      const nextCorrectCount = correctCount + (response.is_correct ? 1 : 0);
+
+      setAnsweredCount(nextAnsweredCount);
+      setCorrectCount(nextCorrectCount);
+      setState(response.state || null);
+
+      if (response.quiz_complete || !response.question) {
+        handleQuizEnd(nextCorrectCount, nextAnsweredCount);
+        return;
+      }
+
+      setQuestion(response.question);
+    } catch (e) {
+      setError('Failed to submit answer. Please retry.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
     return <div className="text-center py-10">Loading quiz...</div>;
   }
 
-  const currentQ = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  if (error && !question) {
+    return (
+      <div className="card-surface p-8 text-center space-y-4">
+        <p className="text-red-600">{error}</p>
+        <button className="btn-primary" onClick={() => navigate('/skills')}>
+          Back to Skills
+        </button>
+      </div>
+    );
+  }
+
+  if (!question) {
+    return <div className="text-center py-10">No question available.</div>;
+  }
+
+  const options = Array.isArray(question.options) ? question.options : [];
+  const totalQuestions = Math.max(skills.length * 3, answeredCount + 1);
+  const progress = ((answeredCount + 1) / totalQuestions) * 100;
 
   return (
     <div className="space-y-8">
@@ -87,10 +109,10 @@ const Quiz = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="headline-display text-3xl font-bold text-gray-900">Career Aptitude Quiz</h1>
-            <p className="text-gray-600 mt-1">Question {currentQuestion + 1} of {questions.length}</p>
+            <p className="text-gray-600 mt-1">Question {answeredCount + 1}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-semibold text-blue-600">{Math.round(progress)}%</p>
+            <p className="text-sm font-semibold text-blue-600">{Math.min(100, Math.round(progress))}%</p>
             <p className="text-xs text-gray-500">Complete</p>
           </div>
         </div>
@@ -98,20 +120,20 @@ const Quiz = () => {
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${Math.min(100, progress)}%` }}
           />
         </div>
       </section>
 
       <section className="card-surface p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{currentQ.question}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{question.question}</h2>
 
         <div className="grid gap-3">
-          {currentQ.options.map((option, index) => (
+          {options.map((option, index) => (
             <button
               key={index}
-              onClick={() => handleAnswerClick(index)}
-              disabled={loading}
+              onClick={() => handleAnswerClick(option)}
+              disabled={submitting}
               className="text-left p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50"
             >
               <span className="text-lg font-medium text-gray-900">{option}</span>
@@ -120,9 +142,9 @@ const Quiz = () => {
         </div>
       </section>
 
-      {loading && (
-        <section className="card-surface p-8 text-center">
-          <p className="text-gray-600">Analyzing your responses...</p>
+      {error && (
+        <section className="card-surface p-4 text-center">
+          <p className="text-red-600">{error}</p>
         </section>
       )}
     </div>

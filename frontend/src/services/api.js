@@ -3,6 +3,9 @@
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
+const QUIZ_BASE_URL =
+  process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
 // Utility function for API calls with error handling
 const apiCall = async (endpoint, method = "GET", data = null) => {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -29,6 +32,28 @@ const apiCall = async (endpoint, method = "GET", data = null) => {
   }
 };
 
+const quizApiCall = async (endpoint, method = "GET", data = null) => {
+  const url = `${QUIZ_BASE_URL}${endpoint}`;
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    throw new Error(
+      `Quiz API Error: ${response.status} ${response.statusText}`,
+    );
+  }
+  return response.json();
+};
+
 // Input Routes
 export const submitSkills = (skills) =>
   apiCall("/input/skills", "POST", { skills });
@@ -39,22 +64,15 @@ export const submitInterests = (interests) =>
 export const createProfile = (name, skills, interests) =>
   apiCall("/input/profile", "POST", { name, skills, interests });
 
-// Quiz Routes
-export const startQuiz = (userId, skills = [], difficulty = "medium") =>
-  apiCall("/quiz/start", "POST", { user_id: userId, skills, difficulty });
+// Adaptive Quiz Routes (direct backend endpoints)
+export const startQuiz = (skills = [], domain = "general") =>
+  quizApiCall("/start-quiz", "POST", { skills, domain });
 
-export const submitAnswer = (userId, questionId, answer) =>
-  apiCall("/quiz/submit-answer", "POST", {
-    user_id: userId,
-    question_id: questionId,
-    answer,
+export const submitAnswer = (state, selectedAnswer) =>
+  quizApiCall("/next-question", "POST", {
+    state,
+    selected_answer: selectedAnswer,
   });
-
-export const getQuestion = (questionId) =>
-  apiCall(`/quiz/get-question/${questionId}`, "GET");
-
-export const endQuiz = (userId) =>
-  apiCall("/quiz/end", "POST", { user_id: userId });
 
 // Evaluation Routes
 export const evaluateSkills = (skills, userId) =>

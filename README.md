@@ -44,8 +44,7 @@ This is a **full-stack, production-ready** application with:
 ### Backend (Flask)
 
 - **4 Route Modules:** Input, Quiz, Evaluation, Matching
-- **4 Service Modules:** Quiz Engine, Scoring, Matching, Trends
-- **2 LLM Modules:** Question Generation, Explanations
+- **5 Service Modules:** Quiz Engine, Question Generator, Scoring, Matching, Trends
 - **SQLite Database:** 7 tables with proper schema
 - **JSON Data:** 5 careers, 10 questions
 

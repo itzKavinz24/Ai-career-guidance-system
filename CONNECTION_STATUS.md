@@ -51,12 +51,10 @@ backend/
 │   └── match.py                     # ✓ Already created
 ├── services/
 │   ├── quiz_engine.py               # ✓ Already created
+│   ├── question_generator.py        # ✓ Already created
 │   ├── scoring.py                   # ✓ Already created
 │   ├── matcher.py                   # ✓ Already created
 │   └── trends.py                    # ✓ Already created
-├── llm/
-│   ├── question_generator.py        # ✓ Already created
-│   └── explanation.py               # ✓ Already created
 ├── data/
 │   ├── careers.json                 # ✓ Already created (5 careers)
 │   └── questions.json               # ✓ Already created (10 questions)
@@ -188,7 +186,6 @@ Match Routes:
    - Add new pages/routes
    - Integrate with a real database (PostgreSQL)
    - Add user authentication
-   - Connect to LLM APIs (OpenAI)
 
 4. **Deploy**
    - Frontend: Deploy to Vercel/Netlify

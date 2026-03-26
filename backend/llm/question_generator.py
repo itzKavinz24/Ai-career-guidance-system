@@ -1,30 +1,44 @@
-"""Claude-powered question generator for adaptive career quizzes."""
+"""Groq-backed question generator with robust JSON parsing and fallback."""
 
 import json
 import os
 import random
+from urllib import error as urlerror
+from urllib import request as urlrequest
 from typing import Dict, List
 
 from dotenv import load_dotenv
 
-try:
-    from anthropic import Anthropic
-except ImportError:  # pragma: no cover - fallback path for missing dependency
-    Anthropic = None
-
 load_dotenv()
 
-_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-_CLIENT = Anthropic(api_key=_API_KEY) if Anthropic and _API_KEY else None
-_LLM_DEBUG = os.getenv("LLM_DEBUG", "false").lower() == "true"
-
 _VALID_DIFFICULTIES = {"easy", "medium", "hard"}
+_DEFAULT_MODEL = "llama-3.1-8b-instant"
+
+
+def _debug_enabled() -> bool:
+    return os.getenv("GROQ_DEBUG", "false").strip().lower() == "true"
+
+
+def _attach_meta(questions: List[Dict[str, object]], source: str, error_text: str = "") -> List[Dict[str, object]]:
+    enriched: List[Dict[str, object]] = []
+    for question in questions:
+        item = dict(question)
+        item["source"] = source
+        if error_text and _debug_enabled():
+            item["debug_error"] = error_text
+        enriched.append(item)
+    return enriched
+
+
+def _groq_config() -> Dict[str, str]:
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    model = os.getenv("GROQ_MODEL", _DEFAULT_MODEL).strip() or _DEFAULT_MODEL
+    api_url = "https://api.groq.com/openai/v1/chat/completions"
+    return {"api_key": api_key, "model": model, "api_url": api_url}
 
 
 def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
-    """Return varied fallback questions when API/JSON parsing fails."""
     prompt_scope = f"{skill} in {domain}" if domain else skill
-
     difficulty_context = {
         "easy": "basic",
         "medium": "intermediate",
@@ -38,14 +52,12 @@ def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[s
         f"When facing a {prompt_scope} challenge, what should you prioritize first?",
         f"Which behavior reflects strong {difficulty_context} thinking for {prompt_scope}?",
     ]
-
     correct_options = [
         "Break the problem into steps, test assumptions, and iterate with feedback",
         "Clarify requirements, choose a method, then validate with measurable results",
         "Identify constraints early and adapt the solution based on evidence",
         "Evaluate trade-offs, then implement and review outcomes systematically",
     ]
-
     distractors = [
         "Pick the first idea and avoid revisiting it even if it fails",
         "Optimize only for speed while ignoring quality and constraints",
@@ -58,101 +70,142 @@ def _fallback_questions(skill: str, domain: str, difficulty: str) -> List[Dict[s
     ]
 
     random.shuffle(question_stems)
-    selected_stems = question_stems[:2]
     questions: List[Dict[str, object]] = []
-
-    for stem in selected_stems:
+    for stem in question_stems[:2]:
         correct = random.choice(correct_options)
         wrong = random.sample(distractors, 3)
         options = wrong + [correct]
         random.shuffle(options)
-        questions.append({"question": stem, "options": options, "answer": correct, "source": "fallback"})
-
-    return questions
+        questions.append({"question": stem, "options": options, "answer": correct})
+    return _attach_meta(questions, "fallback")
 
 
 def _extract_json_array(raw_text: str) -> str:
-    """Trim non-JSON wrapper text and keep only the first JSON array."""
     start = raw_text.find("[")
     end = raw_text.rfind("]")
     if start == -1 or end == -1 or end < start:
-        raise ValueError("No JSON array found in model output")
+        raise ValueError("No JSON array found")
     return raw_text[start : end + 1]
 
 
-def _normalize_questions(parsed: object) -> List[Dict[str, object]]:
-    """Validate/normalize Claude output to exactly two safe question objects."""
+def _normalize(parsed: object) -> List[Dict[str, object]]:
     if not isinstance(parsed, list):
-        raise ValueError("Claude output is not a list")
+        raise ValueError("Model output must be a list")
 
-    normalized: List[Dict[str, object]] = []
+    result: List[Dict[str, object]] = []
     for item in parsed:
         if not isinstance(item, dict):
             continue
-
         question = str(item.get("question", "")).strip()
         options = item.get("options", [])
         answer = str(item.get("answer", "")).strip()
 
         if not question or not isinstance(options, list) or len(options) != 4:
             continue
-
         options = [str(option).strip() for option in options]
         if not all(options):
             continue
-
         if answer not in options:
             answer = options[0]
 
-        normalized.append({"question": question, "options": options, "answer": answer})
-        if len(normalized) == 2:
+        result.append({"question": question, "options": options, "answer": answer})
+        if len(result) == 2:
             break
 
-    if len(normalized) < 2:
-        raise ValueError("Insufficient valid questions in Claude output")
+    if len(result) < 2:
+        raise ValueError("Insufficient valid questions")
+    return result
 
-    return normalized
+
+def _extract_generated_text(payload: object) -> str:
+    if not isinstance(payload, dict):
+        raise ValueError("Unexpected Groq response format")
+
+    choices = payload.get("choices", [])
+    if not isinstance(choices, list) or not choices:
+        raise ValueError("Groq response missing choices")
+
+    first = choices[0]
+    if not isinstance(first, dict):
+        raise ValueError("Invalid Groq choice format")
+
+    message = first.get("message", {})
+    if isinstance(message, dict) and "content" in message:
+        return str(message["content"])
+
+    if "text" in first:
+        return str(first["text"])
+
+    raise ValueError("No generated text in Groq response")
 
 
 def generate_questions(skill: str, domain: str, difficulty: str) -> List[Dict[str, object]]:
-    """Generate two multiple-choice questions for a single skill and difficulty."""
-    safe_skill = (skill or "general problem solving").strip()
+    """Generate 2 questions for one skill/domain/difficulty using Groq, with fallback."""
+    safe_skill = (skill or "problem solving").strip()
     safe_domain = (domain or "career aptitude").strip()
     safe_difficulty = (difficulty or "easy").strip().lower()
     if safe_difficulty not in _VALID_DIFFICULTIES:
         safe_difficulty = "easy"
 
-    if _CLIENT is None:
+    groq = _groq_config()
+    if not groq["api_key"]:
         return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
 
     prompt = (
-        "You are generating a career aptitude quiz."
-        " Return STRICT JSON only, no markdown and no explanation."
-        " Output must be a JSON array with exactly 2 objects."
-        " Each object must have keys: question, options, answer."
-        " options must be an array of exactly 4 strings."
-        " answer must exactly match one option string."
-        f" Domain: {safe_domain}. Skill: {safe_skill}. Difficulty: {safe_difficulty}."
+        "Generate aptitude quiz questions. "
+        "Return STRICT JSON only with no markdown and no explanation. "
+        "Output must be a JSON array with exactly 2 objects. "
+        "Each object requires keys: question, options, answer. "
+        "options must have exactly 4 strings and answer must match one option exactly. "
+        f"Skill: {safe_skill}. Domain: {safe_domain}. Difficulty: {safe_difficulty}."
     )
 
     try:
-        response = _CLIENT.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=700,
-            temperature=0.4,
-            messages=[{"role": "user", "content": prompt}],
+        body = json.dumps(
+            {
+                "model": groq["model"],
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You output strict JSON only.",
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ],
+                "temperature": 0.4,
+                "max_tokens": 700,
+            }
+        ).encode("utf-8")
+
+        req = urlrequest.Request(
+            groq["api_url"],
+            data=body,
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {groq['api_key']}",
+                "Content-Type": "application/json",
+            },
         )
 
-        text_chunks = []
-        for block in response.content:
-            if getattr(block, "type", "") == "text":
-                text_chunks.append(block.text)
+        with urlrequest.urlopen(req, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
 
-        raw_text = "\n".join(text_chunks).strip()
-        json_array_text = _extract_json_array(raw_text)
-        parsed = json.loads(json_array_text)
-        return _normalize_questions(parsed)
+        raw_text = _extract_generated_text(payload).strip()
+
+        json_text = _extract_json_array(raw_text)
+        parsed = json.loads(json_text)
+        return _attach_meta(_normalize(parsed), "groq")
+    except urlerror.HTTPError as exc:
+        return _attach_meta(
+            _fallback_questions(safe_skill, safe_domain, safe_difficulty),
+            "fallback",
+            f"groq_http_error:{exc.code}",
+        )
     except Exception as exc:
-        if _LLM_DEBUG:
-            print(f"Claude generation failed: {exc}")
-        return _fallback_questions(safe_skill, safe_domain, safe_difficulty)
+        return _attach_meta(
+            _fallback_questions(safe_skill, safe_domain, safe_difficulty),
+            "fallback",
+            f"groq_exception:{exc}",
+        )
