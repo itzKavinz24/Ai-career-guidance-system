@@ -501,12 +501,7 @@ const Results = () => {
                 }
               }}
             >
-              <div className="flex items-start justify-between mb-4">
-                <span className="text-4xl">{career.icon}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 border border-blue-100">
-                  <span className="text-sm font-bold text-blue-700">{career.match}%</span>
-                </span>
-              </div>
+              <div className="text-4xl mb-4">{career.icon}</div>
               <h3 className="text-lg font-bold text-blue-700">{career.name}</h3>
               <p className="text-sm text-gray-600 mt-2">{career.description}</p>
 
