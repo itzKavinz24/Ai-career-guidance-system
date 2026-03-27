@@ -134,6 +134,15 @@ const Results = () => {
     return result;
   }, [currentScores]);
 
+  const topicWiseScores = useMemo(() => {
+    return Object.entries(currentScores)
+      .map(([topic, score]) => ({
+        topic,
+        score: Math.max(0, Math.min(100, Math.round(Number(score) || 0))),
+      }))
+      .sort((a, b) => b.score - a.score || a.topic.localeCompare(b.topic));
+  }, [currentScores]);
+
   const handleSimulate = async () => {
     const skill = selectedSkill || skillOptions[0];
     if (!skill) {
@@ -542,6 +551,30 @@ const Results = () => {
           <div className="flex flex-wrap gap-2">
             {skills.map((skill) => (
               <span key={skill} className="tag">{skill}</span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Topic-wise Scores */}
+      {topicWiseScores.length > 0 && (
+        <section className="card-surface p-6">
+          <h3 className="font-bold text-gray-900 mb-1">Topic-wise Skill Scores</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Combined from skill assessment baseline and adaptive quiz performance.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {topicWiseScores.map((item) => (
+              <div key={item.topic} className="rounded-lg border border-blue-100 bg-white/80 p-3">
+                <p className="text-sm font-semibold text-gray-800">{item.topic}</p>
+                <div className="mt-2 progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${item.score}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-sm font-bold text-blue-700">{item.score}%</p>
+              </div>
             ))}
           </div>
         </section>

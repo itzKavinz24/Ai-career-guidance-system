@@ -65,8 +65,16 @@ export const createProfile = (name, skills, interests) =>
   apiCall("/input/profile", "POST", { name, skills, interests });
 
 // Adaptive Quiz Routes (direct backend endpoints)
-export const startQuiz = (skills = [], domain = "general") =>
-  quizApiCall("/start-quiz", "POST", { skills, domain });
+export const startQuiz = (
+  skills = [],
+  domain = "general",
+  assessmentScores = {},
+) =>
+  quizApiCall("/start-quiz", "POST", {
+    skills,
+    domain,
+    assessment_scores: assessmentScores,
+  });
 
 export const submitAnswer = (state, selectedAnswer) =>
   quizApiCall("/next-question", "POST", {

@@ -11,6 +11,7 @@ def start_quiz():
     data = request.get_json(silent=True) or {}
     skills = data.get("skills")
     domain = data.get("domain")
+    assessment_scores = data.get("assessment_scores", {})
 
     if not isinstance(skills, list) or not skills:
         return {"error": "skills must be a non-empty array"}, 400
@@ -18,7 +19,11 @@ def start_quiz():
         return {"error": "domain is required"}, 400
 
     try:
-        state = quiz_engine.initialize_quiz_state(skills=skills, domain=domain)
+        state = quiz_engine.initialize_quiz_state(
+            skills=skills,
+            domain=domain,
+            assessment_scores=assessment_scores,
+        )
         first_question = quiz_engine.get_first_question(state)
         return {
             "message": "Quiz started",

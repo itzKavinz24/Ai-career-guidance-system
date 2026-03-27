@@ -1,6 +1,6 @@
 import json
 import os
-from services.career_analysis import _calculate_metrics, _get_careers_for_domain, _normalize_input_skills
+from services.career_analysis import CAREERS_BY_DOMAIN, _calculate_metrics, _get_careers_for_domain, _normalize_input_skills
 
 # Load careers data from JSON file
 def _load_careers():
@@ -217,20 +217,33 @@ def simulate_skill_improvement(selected_skill, current_scores, interests=None, i
         if first_interest:
             domain_value = first_interest
 
+    def _score_careers(careers_map):
+        old_local = []
+        new_local = []
+        for role_name, required_skills in careers_map.items():
+            old_metrics = _calculate_metrics(expanded_old, required_skills)
+            new_metrics = _calculate_metrics(expanded_new, required_skills)
+
+            role_id = role_name.lower().replace(' ', '-').replace('/', '-')
+            old_local.append({'id': role_id, 'name': role_name, 'score': old_metrics['match']})
+            new_local.append({'id': role_id, 'name': role_name, 'score': new_metrics['match']})
+
+        old_local.sort(key=lambda x: x['score'], reverse=True)
+        new_local.sort(key=lambda x: x['score'], reverse=True)
+        return old_local, new_local
+
     domain_careers = _get_careers_for_domain(domain_value)
+    old_scores, new_scores = _score_careers(domain_careers)
 
-    old_scores = []
-    new_scores = []
-    for role_name, required_skills in domain_careers.items():
-        old_metrics = _calculate_metrics(expanded_old, required_skills)
-        new_metrics = _calculate_metrics(expanded_new, required_skills)
-
-        role_id = role_name.lower().replace(' ', '-').replace('/', '-')
-        old_scores.append({'id': role_id, 'name': role_name, 'score': old_metrics['match']})
-        new_scores.append({'id': role_id, 'name': role_name, 'score': new_metrics['match']})
-
-    old_scores.sort(key=lambda x: x['score'], reverse=True)
-    new_scores.sort(key=lambda x: x['score'], reverse=True)
+    # If domain-restricted simulation is completely flat (all zeros),
+    # fall back to all careers so users still get live, meaningful movement.
+    domain_max_new = max((item['score'] for item in new_scores), default=0)
+    if domain_max_new <= 0:
+        all_careers = {}
+        for careers_map in CAREERS_BY_DOMAIN.values():
+            if isinstance(careers_map, dict):
+                all_careers.update(careers_map)
+        old_scores, new_scores = _score_careers(all_careers)
 
     old_top = old_scores[0]['score'] if old_scores else 0
     new_top = new_scores[0]['score'] if new_scores else 0

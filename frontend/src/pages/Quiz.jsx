@@ -15,6 +15,7 @@ const Quiz = () => {
 
   const skills = useMemo(() => location.state?.skills || [], [location.state?.skills]);
   const domain = location.state?.domain || '';
+  const assessmentScores = useMemo(() => location.state?.assessmentScores || {}, [location.state?.assessmentScores]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -26,7 +27,7 @@ const Quiz = () => {
       setLoading(true);
       setError('');
       try {
-        const response = await startQuiz(skills, domain || 'general');
+        const response = await startQuiz(skills, domain || 'general', assessmentScores);
         setState(response.state || null);
         setQuestion(response.question || null);
       } catch (e) {
@@ -37,7 +38,7 @@ const Quiz = () => {
     };
 
     initialize();
-  }, [skills, domain, navigate]);
+  }, [skills, domain, navigate, assessmentScores]);
 
   const handleQuizEnd = (finalCorrect, finalAnswered, finalState = null) => {
     const quizScore = finalCorrect * 20;

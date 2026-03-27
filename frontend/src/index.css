@@ -18,6 +18,20 @@
   --shadow-soft: 0 16px 45px rgba(49, 73, 146, 0.16);
 }
 
+:root.theme-dark {
+  --bg-base: #0b1220;
+  --bg-secondary: #111b2e;
+  --surface: rgba(16, 26, 46, 0.78);
+  --surface-strong: rgba(20, 33, 58, 0.92);
+  --surface-border: rgba(116, 145, 218, 0.28);
+  --text-main: #e8eefc;
+  --text-secondary: #a5b2d4;
+  --accent: #79a5ff;
+  --accent-light: rgba(121, 165, 255, 0.2);
+  --accent-alt: #3ad6bf;
+  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
 body {
   @apply font-sans antialiased;
   background:
@@ -26,6 +40,13 @@ body {
     linear-gradient(160deg, #f7f9ff 0%, #eef3ff 48%, #f8fcff 100%);
   color: var(--text-main);
   min-height: 100vh;
+}
+
+.theme-dark body {
+  background:
+    radial-gradient(circle at 10% -5%, rgba(80, 121, 255, 0.22), transparent 45%),
+    radial-gradient(circle at 90% 4%, rgba(27, 181, 160, 0.18), transparent 42%),
+    linear-gradient(162deg, #060c17 0%, #0b1324 44%, #09172d 100%);
 }
 
 .app-shell {
@@ -72,6 +93,13 @@ body {
   mask-image: radial-gradient(circle at 30% 20%, black 15%, transparent 75%);
 }
 
+.theme-dark .app-shell .tech-grid {
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(120, 149, 229, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 149, 229, 0.18) 1px, transparent 1px);
+}
+
 .page-container {
   @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full;
   animation: page-enter 480ms cubic-bezier(0.2, 0.9, 0.2, 1);
@@ -103,6 +131,12 @@ body {
   color: #224194;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(10px);
+}
+
+.theme-dark .btn-secondary {
+  border-color: rgba(120, 149, 229, 0.45);
+  color: #d7e4ff;
+  background: rgba(17, 27, 46, 0.72);
 }
 
 .btn-primary:hover {
@@ -154,6 +188,17 @@ body {
   border-color: rgba(89, 113, 189, 0.28);
   background: rgba(255, 255, 255, 0.8);
   color: var(--text-main);
+}
+
+.theme-dark .input-field,
+.theme-dark .select-field {
+  border-color: rgba(120, 149, 229, 0.32);
+  background: rgba(14, 23, 40, 0.9);
+  color: #e5ecff;
+}
+
+.theme-dark .input-field::placeholder {
+  color: #8ea0cc;
 }
 
 .select-field {
@@ -320,6 +365,106 @@ body {
 .headline-display {
   font-family: 'Sora', 'Space Grotesk', sans-serif;
   letter-spacing: -0.02em;
+}
+
+/* Utility class overrides for current Tailwind-heavy JSX without a full rewrite */
+.theme-dark .bg-white,
+.theme-dark .bg-white\/70,
+.theme-dark .bg-white\/80,
+.theme-dark .bg-white\/90 {
+  background-color: rgba(17, 27, 46, 0.86) !important;
+}
+
+.theme-dark .bg-white\/75 {
+  background-color: rgba(18, 29, 49, 0.84) !important;
+}
+
+.theme-dark .bg-blue-50,
+.theme-dark .bg-indigo-50,
+.theme-dark .bg-cyan-50,
+.theme-dark .bg-emerald-50,
+.theme-dark .bg-slate-50,
+.theme-dark .bg-gray-50 {
+  background-color: rgba(15, 24, 42, 0.82) !important;
+}
+
+.theme-dark .bg-blue-50\/70,
+.theme-dark .bg-indigo-100,
+.theme-dark .bg-indigo-100\/60,
+.theme-dark .bg-indigo-100\/70,
+.theme-dark .bg-blue-100,
+.theme-dark .bg-blue-100\/50,
+.theme-dark .bg-blue-100\/60,
+.theme-dark .bg-teal-100,
+.theme-dark .bg-teal-100\/50,
+.theme-dark .bg-teal-100\/60 {
+  background-color: rgba(26, 41, 71, 0.82) !important;
+}
+
+.theme-dark .text-gray-900,
+.theme-dark .text-slate-900,
+.theme-dark .text-slate-800,
+.theme-dark .text-indigo-900,
+.theme-dark .text-blue-900 {
+  color: #e7eeff !important;
+}
+
+.theme-dark .text-gray-700,
+.theme-dark .text-slate-700,
+.theme-dark .text-gray-600,
+.theme-dark .text-slate-600,
+.theme-dark .text-gray-500,
+.theme-dark .text-slate-500,
+.theme-dark .text-indigo-700,
+.theme-dark .text-blue-700 {
+  color: #b6c4e8 !important;
+}
+
+.theme-dark .text-blue-600,
+.theme-dark .text-indigo-600,
+.theme-dark .text-indigo-500 {
+  color: #9cbcff !important;
+}
+
+.theme-dark .border-gray-200,
+.theme-dark .border-slate-200,
+.theme-dark .border-indigo-100,
+.theme-dark .border-indigo-200,
+.theme-dark .border-blue-100,
+.theme-dark .border-blue-200,
+.theme-dark .border-teal-200 {
+  border-color: rgba(120, 149, 229, 0.28) !important;
+}
+
+.theme-dark .shadow-sm,
+.theme-dark .shadow,
+.theme-dark .shadow-md,
+.theme-dark .shadow-lg {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Page-level polish for Home / Quiz / Results cards and accents */
+.theme-dark .bg-gradient-to-r.from-blue-600.via-indigo-500.to-teal-400,
+.theme-dark .bg-gradient-to-r.from-blue-500.via-cyan-400.to-emerald-400 {
+  filter: saturate(0.92) brightness(0.95);
+}
+
+.theme-dark .bg-blue-300\/25,
+.theme-dark .bg-blue-300\/30 {
+  background-color: rgba(86, 124, 226, 0.24) !important;
+}
+
+.theme-dark .bg-teal-300\/25 {
+  background-color: rgba(45, 172, 156, 0.22) !important;
+}
+
+.theme-dark .text-red-600 {
+  color: #fca5a5 !important;
+}
+
+.theme-dark .progress-track,
+.theme-dark .bg-gray-200 {
+  background-color: rgba(68, 86, 128, 0.4) !important;
 }
 
 @keyframes page-enter {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { evaluateSkills, getSkillEvaluation } from "../services/api";
 
 const INTEREST_OPTIONS = [
   "Artificial Intelligence & ML",
@@ -37,6 +38,41 @@ const SkillInput = () => {
   const [message, setMessage] = useState(null);
 
   const navigate = useNavigate();
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const fetchAssessmentScores = async (skillsList) => {
+    const userId = `user-${Date.now()}`;
+    const started = await evaluateSkills(skillsList, userId);
+    const jobId = started?.job_id;
+
+    if (!jobId) {
+      return {};
+    }
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const job = await getSkillEvaluation(jobId);
+      if (job?.status === "completed") {
+        const evaluated = Array.isArray(job.evaluated_skills) ? job.evaluated_skills : [];
+        return evaluated.reduce((acc, item) => {
+          const skill = String(item?.skill || "").trim();
+          const score = Number(item?.relative_demand_score ?? 0);
+          if (skill) {
+            acc[skill] = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+          }
+          return acc;
+        }, {});
+      }
+
+      if (job?.status === "failed") {
+        return {};
+      }
+
+      await wait(900);
+    }
+
+    return {};
+  };
 
   // 🔍 Handle typing + suggestions
   const handleChange = (value) => {
@@ -105,12 +141,13 @@ const SkillInput = () => {
     setMessage(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const assessmentScores = await fetchAssessmentScores(skills);
 
       navigate("/quiz", {
         state: {
           skills,
           domain,
+          assessmentScores,
           source: "skills",
         },
       });

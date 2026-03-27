@@ -7,18 +7,28 @@ from llm.question_generator import generate_questions
 DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
 
 
-def initialize_quiz_state(skills: List[str], domain: str) -> Dict[str, object]:
+def initialize_quiz_state(skills: List[str], domain: str, assessment_scores: Optional[Dict[str, float]] = None) -> Dict[str, object]:
     """Create a fresh adaptive quiz state."""
     normalized_skills = [str(skill).strip() for skill in (skills or []) if str(skill).strip()]
     if not normalized_skills:
         normalized_skills = ["problem solving"]
+
+    incoming_scores = assessment_scores if isinstance(assessment_scores, dict) else {}
+
+    # Preserve user-provided skill labels while enabling case-insensitive lookup.
+    assessment_lookup = {
+        str(skill).strip().lower(): max(0.0, min(100.0, float(score)))
+        for skill, score in incoming_scores.items()
+        if str(skill).strip()
+    }
 
     skill_stats = {
         skill: {
             "asked": 0,
             "correct": 0,
             "wrong": 0,
-            "score": 0,
+            "baseline_score": float(assessment_lookup.get(skill.lower(), 0.0)),
+            "score": float(assessment_lookup.get(skill.lower(), 0.0)),
         }
         for skill in normalized_skills
     }
@@ -35,6 +45,16 @@ def initialize_quiz_state(skills: List[str], domain: str) -> Dict[str, object]:
         "question_buffer": [],
         "current_question": None,
         "skill_stats": skill_stats,
+        "assessment_scores": assessment_lookup,
+        "score_blend": {
+            "assessment_weight": 0.4,
+            "quiz_weight": 0.6,
+        },
+        "skill_scores": {
+            skill: float(values.get("score", 0.0))
+            for skill, values in skill_stats.items()
+            if isinstance(values, dict)
+        },
         "quiz_complete": False,
     }
 
@@ -151,7 +171,13 @@ def get_next_question(state: Dict[str, object], user_answer: str) -> Dict[str, o
 
     asked = max(1, int(stat.get("asked", 1)))
     correct = int(stat.get("correct", 0))
-    stat["score"] = round((correct / asked) * 100, 2)
+    quiz_score = round((correct / asked) * 100, 2)
+    baseline = float(stat.get("baseline_score", 0.0))
+    blend = state.get("score_blend", {}) if isinstance(state.get("score_blend"), dict) else {}
+    assessment_weight = float(blend.get("assessment_weight", 0.4))
+    quiz_weight = float(blend.get("quiz_weight", 0.6))
+    # Blend baseline demand assessment with live quiz accuracy.
+    stat["score"] = round((baseline * assessment_weight) + (quiz_score * quiz_weight), 2)
     skill_stats[current_skill] = stat
 
     # Flatten score view for easy frontend consumption.
